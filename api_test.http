@@ -1,0 +1,149 @@
+### 变量定义
+@baseUrl = http://localhost:5000
+
+### 1. 测试注册接口 (Register)
+POST {{baseUrl}}/api/register
+Content-Type: application/json
+
+{
+    "email": "test1@example.com",
+    "password": "mysecretpassword",
+    "nickname": "Go大神"
+}
+
+### 2. 测试登录接口 (Login)
+# @name login
+POST {{baseUrl}}/api/login
+Content-Type: application/json
+
+{
+    "email": "test@example.com",
+    "password": "mysecretpassword"
+}
+
+### 3. 调试：查看当前 session/cookie（Debug）
+# GET {{baseUrl}}/api/debug_session
+
+### 4. 检查登录状态 (CheckLoginStatus)
+GET {{baseUrl}}/api/check_login_status
+
+### 4. 测试登出接口 (Logout)
+POST {{baseUrl}}/api/logout
+
+### 5. 访问受保护接口 (需要登录) /me
+GET {{baseUrl}}/api/me
+
+### 6. 创建一个新任务
+POST {{baseUrl}}/api/tasks
+Content-Type: application/json
+
+{
+    "description": "复习 Go 并发编程",
+    "type": "s-u-c"
+}
+
+### 7. 获取我的任务列表
+GET {{baseUrl}}/api/tasks
+
+### 8. 删除任务 (假设任务ID为1)
+DELETE {{baseUrl}}/api/tasks/3
+
+### 9. 同步任务计时 (假设任务ID为1)
+POST {{baseUrl}}/api/tasks/1/track
+Content-Type: application/json
+
+{
+    "time_spent": 1200,
+    "timer_start_time": null
+}
+
+### 10. 尝试完成任务 (如果时间不满600秒会报错)
+POST {{baseUrl}}/api/tasks/1/complete
+Content-Type: application/json
+
+### 11. 触发每周结算
+POST {{baseUrl}}/api/tasks/settlement
+Content-Type: application/json
+
+{
+    "season_week": "S1 赛季 第 1 周"
+}
+
+### 12. 检查上次结算时间
+GET {{baseUrl}}/api/my_placeholder_id/lastSettlementDate
+
+### 13. 检查我的周记录 (假设刚生成的 weekrecord ID 为 1)
+GET {{baseUrl}}/api/weekrecord/1
+
+### 14. 获取公共商品列表
+GET {{baseUrl}}/api/shop/public
+
+### 15. 创建一个私有商品 (模拟带图片URL)
+POST {{baseUrl}}/api/shop/private
+Content-Type: application/json
+
+{
+    "name": "给自己买杯奶茶",
+    "points": 5,
+    "type": "public",
+    "image": "/uploads/test-image.png",
+    "rate": 10
+}
+
+### 16. 获取我的私有商品列表 (注意：末尾的ID只是为了兼容之前的URL路由，后端实际以session为准)
+GET {{baseUrl}}/api/shop/private/any_id_here
+
+### 17. 兑换商品 (假设刚刚创建的商品 ID 是 1)
+POST {{baseUrl}}/api/shop/redeem
+Content-Type: application/json
+
+{
+    "item_id": 1
+}
+
+### 18. 删除商品 (假设刚刚创建的商品 ID 是 1)
+DELETE {{baseUrl}}/api/shop/delete
+Content-Type: application/json
+
+{
+    "item_id": 2
+}
+
+### 19. 修改商品积分 (假设刚刚创建的商品 ID 是 1)
+POST {{baseUrl}}/api/shop/alter
+Content-Type: application/json
+
+{
+    "item_id": 3,
+    "item_points": 10
+}
+
+### 20. 查询商品类型 (假设刚刚创建的商品 ID 是 1)
+POST {{baseUrl}}/api/shop/info
+Content-Type: application/json
+
+{
+    "item_id": 3
+}
+
+### 21. 获取我的个人信息和兑换记录
+GET {{baseUrl}}/api/user/any_id
+
+### 22. 修改昵称
+POST {{baseUrl}}/api/user/nickname
+Content-Type: application/json
+
+{
+    "newNickname": "无敌打工魂"
+}
+
+### 23. 修改头像
+POST {{baseUrl}}/api/user/update_avatar
+Content-Type: application/json
+
+{
+    "avatar_url": "/uploads/new-avatar-test.png"
+}
+
+### 24. 查看积分排行榜 (无需登录即可查看)
+GET {{baseUrl}}/api/leaderboard

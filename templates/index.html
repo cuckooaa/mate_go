@@ -1,0 +1,1443 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Mate - 用积分管理你的效率！</title>
+  <link rel="icon" type="image/png" href="/static/a4.png">
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    html {
+    background-color: #f3f4f6; /* 使用与背景图相近的颜色 */
+    }
+    body {
+      font-family: 'Inter', sans-serif;
+      background-color: rgba(255, 255, 255, 0);
+      margin: 0;
+      position: relative;
+      min-height: 100vh;
+      overflow-x: hidden;
+    }
+    /* 背景层：用伪元素实现固定效果 */
+    /* body::before {
+      content: "";
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background-image: url('/static/a0.png');
+      background-size: cover;
+      background-position: center center;
+      background-repeat: no-repeat;
+      z-index: -100;
+    } */
+    body.logged-in::before {
+    background-image: none !important; /* 强制移除背景图片 */
+    /* background-color: #f3f4f6 !important; 可以设置一个纯色背景，使用 body 默认的颜色 */
+    }
+
+    .loading-container { display:flex; justify-content:center; align-items:center; min-height:100vh; }
+    .loading-spinner { border:4px solid rgba(0,0,0,0.1); width:36px; height:36px; border-radius:50%; border-left-color:#3b82f6; animation:spin 1s ease infinite; }
+    @keyframes spin { 0%{transform:rotate(0)} 100%{transform:rotate(360deg)} }
+    .page{ display:none; } .page.active{ display:block; }
+    .modal{ position:fixed; inset:0; width:100%; height:100%; background:rgba(0,0,0,.5); display:none; justify-content:center; align-items:center; z-index:1000; }
+    .modal-content{ background: rgba(255, 255, 255, 1); padding:24px; border-radius:12px; box-shadow:0 4px 6px rgba(0,0,0,.1); text-align:center; max-width:400px; width:90%; }
+
+    #task-list li, #shop-items-list li, #redeemed-items-list li {
+      transition: all 0.2s;
+    }
+  </style>
+</head>
+<body class="flex flex-col items-center justify-center min-h-screen p-4">
+
+  <div id="loading-container" class="loading-container">
+    <div class="loading-spinner"></div>
+  </div>
+
+  <div id="app-container" class=" hidden bg-white rounded-2xl shadow-xl p-8 max-w-2xl w-full pb-20 md:pb-8 min-h-screen">
+    <header id="main-header" class="flex flex-col mb-4">
+
+      <div class="flex justify-between items-center mb-4 ">
+        <div>
+          <h1 class="text-4xl font-bold text-gray-800">Mate</h1>
+          <p class="text-gray-500">用积分管理你的效率！</p>
+          <p id="season-week" class="text-lg font-bold text-gray-600 mt-2"></p>
+        </div>
+        <button id="logout-btn" class="bg-red-500 text-white font-bold py-2 px-4 rounded-lg hover:bg-red-600 transition-colors">
+          登出
+        </button>
+      </div>
+    
+      <nav class="bg-white fixed z-10 inset-x-0 bottom-0 py-4 flex justify-evenly shadow-lg md:static md:bottom-auto md:bg-transparent md:shadow-none md:mb-4">
+        <a href="#" data-page="plan-page" class="text-white font-semibold rounded-full bg-blue-500 py-2 px-4 transition-colors">计划</a>
+        <a href="#" data-page="shop-page" class="text-gray-500 py-2 px-4 rounded-full transition-colors">商城</a>
+        <a href="#" data-page="my-page"   class="text-gray-500 py-2 px-4 rounded-full transition-colors">我的</a>
+      </nav>
+    </header>
+
+      <div id="plan-page" class="page active">
+        <form id="task-form" class="mb-8">
+        <p id="task-form-status" class="text-center mb-4 text-sm font-medium"></p>
+        <p id="rules-page-btn" class="text-center mb-4 text-sm font-medium text-blue-600">新手指南</p>
+        <div class="space-y-4">
+          <div>
+            <label for="task-description" class="block text-sm font-medium text-gray-700 mb-1">任务描述</label>
+            <input type="text" id="task-description" placeholder="例如：完成毕业设计第一章" required
+                   class="bg-opacity-50 bg-white w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+          </div>
+          <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div>
+              <label class="block text-sm font-medium text-gray-700 mb-1">重要性 (s/ns)</label>
+              <select id="task-significance" class="bg-opacity-50 bg-white w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+                <option value="s">重要 (s)</option>
+                <option value="ns">不重要 (ns)</option>
+              </select>
+            </div>
+            <div>
+              <label class="block text-sm font-medium text-gray-700 mb-1">紧急性 (u/nu)</label>
+              <select id="task-urgency" class="bg-opacity-50 bg-white w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+                <option value="u">紧急 (u)</option>
+                <option value="nu">不紧急 (nu)</option>
+              </select>
+            </div>
+            <div>
+              <label class="block text-sm font-medium text-gray-700 mb-1">难易度 (c/nc)</label>
+              <select id="task-complexity" class="bg-opacity-50 bg-white w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+                <option value="c">困难 (c)</option>
+                <option value="nc">不困难 (nc)</option>
+              </select>
+            </div>
+          </div>
+          <button type="submit" class="w-full bg-blue-500 text-white font-bold py-2 px-4 rounded-lg hover:bg-blue-700 transition-colors">
+            添加任务
+          </button>
+        </div>
+        </form>
+
+        <div class="flex justify-between items-center mb-4">
+          <h2 class="text-2xl font-bold text-gray-800">本周任务列表</h2>
+          <a href="/rankinglist" class="text-sm font-medium text-blue-600">本周积分榜</a>
+        </div>
+
+        <div class="mb-8">
+        <div id="task-list" class="space-y-4"></div>
+        </div>
+
+        <div class="flex justify-between items-center mb-4">
+          <h2 class="text-2xl font-bold text-gray-800">每周任务结算</h2>
+        </div>
+
+          <div>
+        <div id="week-record-list" class="space-y-4"></div>
+        </div>
+      </div>
+    
+
+
+      <div id="shop-page" class="page">
+      <h2 class="text-2xl font-bold text-gray-800 mb-4 text-center">积分商城</h2>
+
+
+      <div class="mb-8">
+        <h3 class="text-xl font-bold text-gray-700 mb-2">添加商品</h3>
+        <form id="create-private-shop-item-form" class="space-y-2 p-4 rounded-lg ">
+          <div>
+            <label for="private-item-name" class="block text-sm font-medium text-gray-700 mb-1">商品名</label>
+            <input type="text" id="private-item-name" required class="bg-opacity-50 bg-white w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+          </div>
+          <div class="flex w-full space-x-2"> 
+            <div class="w-1/2">
+              <label for="private-item-points" class="block text-sm font-medium text-gray-700 mb-1">商品价格(人民币)</label>
+              <input type="number" id="private-item-points" required class="bg-opacity-50 bg-white w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+            </div>
+            <div class="w-1/2">
+              <label for="exchange_rate" class="block text-sm font-medium text-gray-700 mb-1">积分汇率</label>
+              <input type="number" id="exchange_rate" required class="bg-opacity-50 bg-white w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+            </div>
+          </div>
+          <div>
+              <label for="private-item-type" class="block text-sm font-medium text-gray-700 mb-1">商品类别</label>
+              <select id="private-item-type" class="bg-opacity-50 bg-white w-full px-4 py-2 border border-gray-300 text-gray-400 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+                <option value="private">私人商品</option>
+                <option value="public">公共商品</option>
+              </select>
+            </div>
+          <div>
+            <label for="private-item-image" class="block text-sm font-medium text-gray-700 mb-2">商品图片</label>
+            <input type="file" id="private-item-image" accept="image/*" class=" text-sm text-gray-500 file:bg-opacity-50 file:mr-2 file:py-1 file:px-2 file:rounded-md file:border-0 file:text-sm file:bg-white file:font-semibold file:text-blue-600 hover:file:underline">
+          </div>
+          <button type="submit" class="w-full bg-blue-500 text-white font-bold py-2 px-4 rounded-lg hover:bg-blue-700 transition-colors">
+            添加商品
+          </button>
+        </form>
+      </div>
+
+
+      <h3 class="text-xl font-bold text-gray-700 mb-2">公共商品</h3>
+      <div id="public-shop-items" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6 mb-8"></div>
+
+      <h3 class="text-xl font-bold text-gray-700 mb-2">我的商品</h3>
+      <div id="private-shop-items" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6"></div>
+    </div>
+
+
+      <div id="my-page" class="page">
+      <div class="flex items-center justify-center mb-8">
+          <div id="nickname-display-area" class="flex items-center space-x-2">
+              <h2 id="nickname-display" class="text-3xl font-bold text-gray-800">未设置昵称</h2>
+              <button id="edit-nickname-btn" class="p-1 rounded-full text-gray-300 hover:bg-gray-100 transition-colors">
+                  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-5 h-5">
+                    <path d=" M12 8h-8c-2 0 -3 1 -3 3v8c0 2 1 3 3 3h8c2 0 3-1 3-3v-4" />
+                    <line x1="19" y1="5" x2="9" y2="15" />
+                  </svg>
+              </button>
+          </div>
+          <div id="nickname-edit-area" class="hidden flex items-center space-x-2 w-full max-w-sm">
+              <input type="text" id="nickname-input" placeholder="输入新昵称" class="bg-opacity-50 bg-white flex-grow px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+              <button id="save-nickname-btn" class=" bg-blue-600 text-white font-bold py-2 px-4 rounded-lg hover:bg-blue-700 transition-colors">
+                  保存
+              </button>
+          </div>
+      </div>
+
+      <div class="flex flex-col items-center space-y-4 mb-8">
+        <div class="flex items-center justify-center">
+          <div id="avatar-display-area" class="relative flex items-center space-x-2 w-28">
+                <div class="w-24 h-24 rounded-full border-4 border-white shadow-lg overflow-hidden">
+                  <img id="user-avatar" class="w-full h-full object-cover" 
+                      src="/static/a2.png"
+                      alt="User Avatar"/>
+                </div>
+                <button id="edit-avatar-btn" class="absolute bottom-0 right-0 p-1 rounded-full text-gray-300 hover:bg-gray-100 transition-colors">
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-5 h-5">
+                      <path d=" M12 8h-8c-2 0 -3 1 -3 3v8c0 2 1 3 3 3h8c2 0 3-1 3-3v-4" />
+                      <line x1="19" y1="5" x2="9" y2="15" />
+                    </svg>
+                </button>
+          </div>
+          <div id="upload-avatar-form" class="hidden flex flex-col items-start space-y-4 w-full max-w-sm">
+              <input type="file" id="avatar-file-input" accept="image/*" class="text-sm text-gray-500 file:bg-opacity-50 file:mr-2 file:py-1 file:px-2 file:rounded-md file:border-0 file:text-sm file:bg-white file:font-semibold file:text-blue-600 hover:file:underline">
+              <button id="save-avatar-btn" class="bg-blue-600 text-white font-bold py-2 px-4 rounded-lg hover:bg-blue-700 transition-colors">
+                  保存头像
+              </button>
+          </div>
+        </div>
+        <p class="text-base font-bold text-gray-600 whitespace-nowrap">id:
+          <span id="user-id-display-my" class="font-normal text-sm text-gray-500"></span>
+        </p>
+        <div class="flex space-x-8">
+          <div class="text-center">
+            <p class="text-xl font-bold text-gray-800"><span id="current-points">0</span></p>
+            <p class="text-gray-500">当前积分</p>
+          </div>
+          <div class="text-center">
+            <p class="text-xl font-bold text-gray-800"><span id="total-points">0</span></p>
+            <p class="text-gray-500">累计获得积分</p>
+          </div>
+        </div>
+      </div>
+
+
+      <h3 class="text-xl font-bold text-gray-700 mb-2">兑换过的商品</h3>
+      <div id="redeemed-items-list" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6"></div>
+      
+    </div>
+
+  </div>
+    
+  <div id="login-modal" class="modal active">
+    <div class="modal-content ">
+      <h3 id="login-title" class="text-2xl font-bold mb-4">登录</h3>
+      <p id="login-error-message" class="text-red-500 mb-4"></p>
+      <form id="auth-form" class="space-y-4">
+        <div>
+          <input type="email" id="auth-email" placeholder="邮箱" required
+                 class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+        </div>
+        <div>
+          <input type="password" id="auth-password" placeholder="密码" required
+                 class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+        </div>
+        <button type="submit" id="auth-btn" class="w-full bg-blue-600 text-white font-bold py-2 px-4 rounded-lg hover:bg-blue-700 transition-colors">
+          登录
+        </button>
+      </form>
+      <button id="toggle-auth-btn" class="text-sm mt-4 text-blue-600 hover:underline">还没有账户？注册</button>
+    </div>
+  </div>
+
+  <div id="my-modal" class="fixed inset-0 w-full h-full  hidden flex justify-center items-center z-[1000]">
+    <div class="bg-white p-6 rounded-xl shadow-md text-center max-w-[400px] w-[90%] relative ">
+        <button id="close-modal-btn" class="absolute top-4 right-4 text-gray-400 hover:text-gray-600">
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-6 h-6">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
+            </svg>
+        </button>
+        <h3 id="modal-title" class="text-2xl font-bold mb-4"></h3>
+        <p id="modal-message" class="text-gray-700 mb-6"></p>
+        <div class="flex justify-center space-x-4">
+            <button id="modal-cancel-btn" class="px-4 py-2 bg-gray-300 text-gray-800 rounded-lg hover:bg-gray-400">取消</button>
+            <button id="modal-confirm-btn" class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700">确定</button>
+        </div>
+    </div>
+  </div>
+
+  <!-- 个人新增page -->
+   <div id="intro-page" class=" page active max-w-xl w-full text-center ">
+    <div class=" bg-transparent rounded-2xl  p-8">
+      <h1 class="text-6xl font-extrabold text-blue-600 mt-8 mb-2">Mate</h1>
+      <p class="text-sm text-gray-100 mb-12">用积分管理你的效率！</p>
+      <p class="text-base text-gray-600 mb-8">
+        Mate 是一款帮助你高效管理任务的工具。通过将任务与积分系统相结合，用积分衡量你的努力，并用它们兑换您心仪的商品，让每一个成就都变得有形。
+      </p>
+      <button id="intro-login-btn" class="bg-blue-600 text-white font-bold py-3 px-8 rounded-full text-lg hover:bg-blue-700 transition-colors">
+        立即登录
+      </button>
+    </div>
+  </div>
+
+  <div id="rules-page" class="page max-w-2xl w-full">
+    <div class=" bg-white max-auto rounded-2xl shadow-xl p-6 space-y-8">
+
+      <button id="rules-back-btn" class="mb-4 text-gray-600 hover:text-blue-600 transition-colors">← 返回计划页面</button>
+
+      <!-- <div class="max-w-4xl mx-auto p-6 space-y-8 bg-white shadow-xl rounded-lg border border-gray-100"> -->
+
+    <header class="text-center">
+        <h1 class="text-3xl font-extrabold text-blue-600 sm:text-4xl border-b-2 pb-2 border-blue-200">新手入门指南</h1>
+        <p class="mt-2 text-lg text-gray-600">用时间量化努力，以目标驱动行动！</p>
+    </header>
+
+    <section class="bg-opacity-50 bg-blue-50 p-4 rounded-lg shadow-inner border-l-4 border-blue-500">
+        <h2 class="text-2xl font-bold text-blue-600 mb-3">核心理念</h2>
+        <p class="text-gray-700 leading-relaxed">
+            本网站的核心在于<strong class="font-semibold text-blue-600">量化您的努力</strong>，并将其转化为<strong class="font-semibold text-blue-600">购买心仪商品的“货币”</strong>。
+            您用<strong class="font-semibold text-blue-600">努力的时间</strong>来换取商品，既规避了冲动消费，又让努力有了明确的目标和动力。
+        </p>
+    </section>
+
+    <div class="space-y-6">
+        <h2 class="text-2xl font-bold text-gray-800 border-b pb-1">一、计划页面：任务管理与时间量化</h2>
+
+        <div class="space-y-4">
+            <h3 class="text-xl font-semibold text-gray-700">1. 任务分类</h3>
+            <p class="text-gray-700 leading-relaxed">
+                每项任务根据<strong class="font-medium text-blue-600">重要性 (s/ns)</strong>、<strong class="font-medium text-blue-600">紧急性 (u/nu)</strong> 和<strong class="font-medium text-blue-600">难易度 (c/nc)</strong> 进行多维度分类，<strong class="font-medium text-blue-600">其对应的分数表示此类任务每小时可获得的积分数</strong>，从而帮助您更好地规划任务优先级。
+            </p>
+            <ul class="list-disc list-inside ml-4 text-sm text-gray-600 grid grid-cols-1 sm:grid-cols-2 gap-1">
+                <li>重要-紧急-困难 (s-u-c) 1.2</li>
+                <li>不重要-紧急-困难 (ns-u-c) 0.9</li>
+                <li>重要-不紧急-困难 (s-nu-c) 1.0</li>
+                <li>重要-紧急-不困难 (s-u-nc) 1.0</li>
+                <li>不重要-不紧急-困难 (ns-nu-c) 0.9</li>
+                <li>不重要-紧急-不困难 (ns-u-nc) 0.7</li>
+                <li>重要-不紧急-不困难 (s-nu-nc) 0.9</li>
+                <li>不重要-不紧急-不困难 (ns-nu-nc) 0.6</li>
+            </ul>
+        </div>
+
+        <div class="space-y-4">
+            <h3 class="text-xl font-semibold text-gray-700">2. 计时与积分</h3>
+            <p class="text-gray-700 leading-relaxed">
+                任务条右上角有<strong class="font-medium text-blue-600">计时器</strong>。点击它（变蓝）开始任务计时，再次点击（变灰）暂停。<strong class="font-medium text-red-500">注意：计时支持离线持续，但同一时刻只能对一个任务计时。</strong>
+            </p>
+            <p class="text-gray-700 leading-relaxed">
+                任务完成后，点击<strong class="font-medium text-blue-600">√按钮</strong>。系统会根据<strong class="font-medium">任务类别</strong>和<strong class="font-medium">花费时间</strong>计算并同步增加您的账户积分。
+            </p>
+        </div>
+
+        <div class="space-y-4">
+            <h3 class="text-xl font-semibold text-gray-700">3. 每周结算</h3>
+            <p class="text-gray-700 leading-relaxed">
+                每周系统会自动结算：统计本周总用时、完成任务数和总积分。已完成任务将被归档总结到“每周任务总结”，<strong class="font-medium text-blue-600">点击总结的信息条会跳转显示当周完成的任务的详细信息。此外未完成任务则自动转入下一周</strong>继续进行。
+            </p>
+        </div>
+    </div>
+
+    <div class="space-y-6">
+        <h2 class="text-2xl font-bold text-gray-800 border-b pb-1">二、商城页面：积分兑换与商品设置</h2>
+
+        <div class="space-y-4">
+            <h3 class="text-xl font-semibold text-gray-700">1. 价值转换</h3>
+            <p class="text-gray-700 leading-relaxed">
+                商品价格只需输入<strong class="font-medium">现实世界的人民币价格</strong>。系统会通过<strong class="font-medium text-blue-600">积分汇率（默认 1 积分 = 10 元）</strong>自动转换为所需积分。您可以<strong class="font-medium text-blue-600">随时调整汇率</strong>（例如 1:15）。
+            </p>
+        </div>
+
+        <div class="space-y-4">
+            <h3 class="text-xl font-semibold text-gray-700">2. 商品类型与规则</h3>
+            <ul class="space-y-3 text-gray-700 leading-relaxed">
+                <li class="flex items-start">
+                  <span>
+                    <span class="font-bold text-blue-600 mr-2">公共商品：</span>
+                    创建后所有人可见（如一杯奶茶）。可随意修改和删除，<strong class="font-medium text-blue-600">兑换后不会消失，可重复兑换。</strong>
+                  </span>
+                </li>
+                <li class="flex items-start">
+                  <span>
+                    <span class="font-bold text-blue-600 mr-2">私人商品：</span>
+                    创建后仅自己可见。可随意修改和删除，<strong class="font-medium text-blue-600">兑换后会消失，不可重复兑换。</strong>
+                    </span>
+                </li>
+            </ul>
+        </div>
+    </div>
+
+    <div class="space-y-6">
+        <h2 class="text-2xl font-bold text-gray-800 border-b pb-1">三、我的页面：个人信息与历史记录</h2>
+
+        <div class="space-y-4">
+            <ul class="space-y-3 text-gray-700 leading-relaxed">
+                <li class="flex items-start">
+                  <span>
+                    <span class="font-bold text-blue-600 mr-2">个人信息：</span>
+                    可更改<strong class="font-medium">昵称和头像</strong>。点击右下角编辑按钮，完成后点击保存即可。
+                    </span>
+                </li>
+                <li class="flex items-start">
+                  <span>
+                    <span class="font-bold text-blue-600 mr-2">兑换历史：</span>
+                    您可以在此查看<strong class="font-medium">所有已兑换过的商品信息</strong>。
+                    </span>
+                </li>
+            </ul>
+        </div>
+    </div>
+
+    <footer class="text-center pt-6 border-t mt-8 border-gray-200">
+        <p class="text-gray-500 text-sm">
+            如有任何建议，欢迎反馈至邮箱：<a href="mailto:19822708010@163.com" class="text-blue-500 hover:text-blue-700 font-medium">19822708010@163.com</a>
+        </p>
+    </footer>
+
+    </div>
+  </div>
+
+  <script>
+    // 我们将在这里重写 JavaScript 代码
+    // 这部分代码将负责处理表单提交、与后端 API 交互等功能
+    
+    // 定义 DOM 元素变量
+    const loadingContainer = document.getElementById('loading-container');
+    const appContainer = document.getElementById('app-container');
+    const mainHeader = document.getElementById('main-header'); // 新增
+    const loginModal = document.getElementById('login-modal');
+    const authForm = document.getElementById('auth-form');
+    const toggleAuthBtn = document.getElementById('toggle-auth-btn');
+    const loginTitle = document.getElementById('login-title');
+    const logoutBtn = document.getElementById('logout-btn');
+    const loginErrorMessage = document.getElementById('login-error-message');
+    const authBtn=document.getElementById('auth-btn');
+    const myModal = document.getElementById('my-modal');
+    const closeModalBtn = document.getElementById('close-modal-btn');
+    const modalTitle = document.getElementById('modal-title');
+    const modalMessage = document.getElementById('modal-message');
+    const modalConfirmBtn = document.getElementById('modal-confirm-btn');
+    const modalCancelBtn = document.getElementById('modal-cancel-btn');
+    const rulesPageBtn = document.getElementById('rules-page-btn');
+    const rulesBackBtn = document.getElementById('rules-back-btn');
+
+
+    let isRegistering = false;
+    let currentUserId = null;
+
+    // --- 工具函数 ---
+    function showModal(title, message, isConfirm=false, onConfirm=null) {
+        modalTitle.textContent = title;
+        modalMessage.textContent = message;
+        myModal.style.display = 'flex';
+
+        if(isConfirm){
+        modalConfirmBtn.style.display = 'inline-block';
+        modalCancelBtn.style.display = 'inline-block';
+        modalConfirmBtn.onclick = async () => { onConfirm && (await onConfirm()); hideModal(); };
+      } else {
+        modalConfirmBtn.style.display = 'none';
+        modalCancelBtn.style.display = 'none';
+      }
+    }
+
+    function hideModal(){
+      myModal.style.display = 'none';
+      // modalConfirmBtn.onclick = null;
+    }
+
+    modalCancelBtn.addEventListener('click', hideModal);
+
+
+    function showPage(pageId) {
+        document.querySelectorAll('.page').forEach(page => page.classList.remove('active'));
+        document.getElementById(pageId).classList.add('active');
+        // 控制主页面的头部显示/隐藏
+        if(pageId === 'plan-page' || pageId === 'shop-page' || pageId === 'my-page'){
+            mainHeader.style.display = 'flex';
+        } else {
+            mainHeader.style.display = 'none';
+        }
+    }
+
+    // 新增：处理页面导航
+    document.querySelectorAll('[data-page]').forEach(link => {
+      link.addEventListener('click', (e) => {
+        e.preventDefault();
+        const targetPage = e.currentTarget.dataset.page;
+        showPage(targetPage);
+        
+        // 更新底部导航链接的样式，仅针对 app-container 内的导航
+        if (e.currentTarget.closest('#app-container')) {
+          document.querySelectorAll('#app-container nav a').forEach(a => {
+            a.classList.remove('bg-blue-500', 'text-white', 'font-semibold');
+            a.classList.add('text-gray-500');
+          });
+          e.currentTarget.classList.remove('text-gray-500');
+          e.currentTarget.classList.add('text-white', 'bg-blue-500','font-semibold');
+        }
+      });
+    });
+
+    // --- 事件监听器 ---
+    toggleAuthBtn.addEventListener('click', () => {
+        isRegistering = !isRegistering;
+        loginTitle.textContent = isRegistering ? '注册' : '登录';
+        toggleAuthBtn.textContent = isRegistering ? '已有账户？登录' : '还没有账户？注册';
+        authBtn.textContent= isRegistering ? '注册' : '登录';
+        loginErrorMessage.textContent = '';
+        // 注册表单额外字段（昵称）将在后续步骤添加
+    });
+
+    closeModalBtn.addEventListener('click', () => {
+        myModal.style.display = 'none';
+    });
+
+    // 新增：规则页返回按钮
+    rulesBackBtn.addEventListener('click', ()=>{
+      appContainer.classList.remove('hidden');
+      showPage('plan-page');
+    });
+
+    rulesPageBtn.addEventListener('click', ()=>{
+      appContainer.classList.add('hidden');
+      showPage('rules-page')
+    })
+
+    logoutBtn.addEventListener('click', async () => {
+    try {
+        // 1. 发送请求给后端销毁 Session
+        const response = await fetch('/api/logout', {
+            method: 'POST',
+            // 不需要 body，只需要发送请求
+        });
+
+        // 确保服务器返回成功（状态码 200-299）
+        if (response.ok) {
+            // 2. 后端销毁成功：清除前端本地状态
+            currentUserId = null;
+            
+            // 3. 切换界面显示
+            appContainer.classList.add('hidden');
+            document.body.classList.remove('logged-in');
+            showPage('intro-page');
+            
+            // 可选：刷新页面，确保所有状态彻底重置 (推荐)
+            window.location.reload(); 
+        } else {
+            // 如果后端返回错误，则显示提示
+            const data = await response.json();
+            console.error('Logout failed:', data.message);
+            // 可以在这里 showModal('登出失败', '服务器无法清除会话。');
+        }
+    } catch (error) {
+        console.error('Network Error during logout:', error);
+        // 通常在网络错误时，依然建议清除本地状态并跳转，因为用户感知上已经登出了
+        currentUserId = null;
+        appContainer.classList.add('hidden');
+        document.body.classList.remove('logged-in');
+        showPage('intro-page');
+    }
+});
+    
+    // 将所有登录后需要执行的初始化操作封装到这里
+    async function initializeApp(userId) {
+        currentUserId = userId; // 设置全局用户ID
+
+        document.body.classList.add('logged-in');
+
+        // 1. 隐藏登录界面，显示应用主容器
+        loadingContainer.classList.add('hidden');
+        loginModal.style.display = 'none'; // 假设这是登录弹窗或容器
+        appContainer.classList.remove('hidden');
+        
+        // 2. 核心业务初始化
+        // checkAndPerformSettlement();
+        updateWeeklyDisplay();      
+        
+        // 3. 数据获取
+        fetchTasks();
+        fetchShopItems();
+        fetchUserInfo();
+
+        checkAndPerformSettlement();
+        
+        // 4. 跳转到指定页面
+        showPage('plan-page');
+    }
+
+    // 登录/注册表单提交事件处理
+    authForm.addEventListener('submit', async (e) => {
+        e.preventDefault();
+
+        const email = authForm['auth-email'].value.trim();
+        const password = authForm['auth-password'].value;
+        const url = isRegistering ? '/api/register' : '/api/login';
+        
+        try {
+            loginErrorMessage.textContent = '';
+            const response = await fetch(url, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ email, password })
+            });
+            const data = await response.json();
+
+            if(response.ok && isRegistering ==true){
+              showModal('注册成功','你已成功注册账号。');
+              toggleAuthBtn.click();
+              return;
+            }else {
+                loginErrorMessage.textContent = data.error;
+                // showModal('操作失败', data.error);
+            }
+
+            if (response.ok) {
+                initializeApp(data.user_id); 
+            }else {
+                loginErrorMessage.textContent = data.error;
+                // showModal('操作失败', data.error);
+            }
+        } catch (error) {
+            console.error('Error:', error);
+            showModal('网络错误', '无法连接到服务器。');
+        }
+    });
+
+
+    // 赛季/周数
+    const seasonEpoch = new Date('2025-10-26T00:00:00+08:00');
+    const millisecondsPerWeek = 7 * 24 * 60 * 60 * 1000;
+    const weeksPerSeason = 8;
+    function getSeasonAndWeek() {
+      const now = new Date();
+      const elapsedWeeks = Math.floor((now - seasonEpoch) / millisecondsPerWeek);
+      const season = Math.floor(elapsedWeeks / weeksPerSeason) + 1;
+      const week = (elapsedWeeks % weeksPerSeason) + 1;
+      return { season, week };
+    }
+    function get_record_SeasonAndWeek(){
+      const now = new Date();
+      const elapsedWeeks = Math.floor((now - seasonEpoch) / millisecondsPerWeek);
+      let totalweeks= elapsedWeeks==0? 0 : elapsedWeeks-1;
+      const season = Math.floor(totalweeks / weeksPerSeason) + 1;
+      const week = (totalweeks % weeksPerSeason) + 1;
+      return { season, week };
+    }
+    function updateWeeklyDisplay(){
+      const {season, week} = getSeasonAndWeek();
+      document.getElementById('season-week').textContent = `S${season} 赛季 第 ${week} 周`;
+    }
+
+    // 每周结算
+    async function checkAndPerformSettlement() {
+      if (!currentUserId) return;
+      const now = new Date();
+      // 只在周日晚上8点或之后进行结算
+      // if (!( (now.getDay() === 0 && now.getHours() >= 20) || (now.getDay() === 1 && now.getHours() <div 20) )) return;
+      // if (!(now.getDay() === 0 || now.getDay() === 1 )) return;
+      const response = await fetch(`/api/${currentUserId}/lastSettlementDate`, {
+                    method: 'GET',
+                    headers: { 'Content-Type': 'application/json' }
+                });
+      const data = await response.json();
+      lastSettlementDate = new Date(data.last_settlement_date);
+      
+      // 计算本周结算窗口的开始时间（即最近的周日晚上8点）
+      const startOfSettlementWindow = new Date(now);
+      startOfSettlementWindow.setDate(now.getDate() - now.getDay()); // 设置为本周日
+      startOfSettlementWindow.setHours(0, 0, 0, 0);
+
+      // 如果上次结算时间在本次结算窗口开始之后，则说明本周已结算，直接返回
+      if (lastSettlementDate.getTime() >= startOfSettlementWindow.getTime()) {
+        return;
+      }
+      
+      await performWeeklySettlement();
+    }
+    async function performWeeklySettlement(){
+      try {
+            // const season_week=document.getElementById('season-week').textContent
+            const {season, week} = get_record_SeasonAndWeek();
+            const response=await fetch(`/api/tasks/settlement`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ user_id: currentUserId,
+                                       season_week: `S${season} 赛季 第 ${week} 周`
+                 })
+            });
+            const data = await response.json();
+
+            if (response.ok) {
+            showModal('🌟每周结算完成🌟', data.message);
+            fetchTasks();
+            fetchUserInfo();
+            }else{
+              showModal('错误', data.error);
+            }
+          } catch (error) {
+              showModal('网络错误', '无法连接到服务器。');
+          }
+    }
+
+    // 获取 DOM 元素
+    const taskForm = document.getElementById('task-form');
+    const taskList = document.getElementById('task-list');
+    const weekRecordList = document.getElementById('week-record-list');
+
+    // 新增：全局变量，存储当前正在计时的任务的开始时间戳
+    let activeTimerStartTime = null; 
+    let activeTimerId = null;
+    const runningTaskTimes = {}; // 存储所有任务当前的用时，键为 task.id
+    let timerInterval = null;
+
+    // 辅助函数：将秒数格式化为 H:M:S
+    function formatTime(totalSeconds) {
+        const hours = Math.floor(totalSeconds / 3600);
+        const minutes = Math.floor((totalSeconds % 3600) / 60);
+        const seconds = totalSeconds % 60;
+
+        return [hours, minutes, seconds]
+            .map(v => v < 10 ? "0" + v : v)
+            .join(":");
+    }
+
+    // ... 在 fetchTasks() 成功获取数据后，需要检查是否有任务正在计时
+    function checkRunningTimer(tasks) {
+        // 确保只有一个任务正在计时
+        const runningTask = tasks.find(t => t.timer_start_time !== null);
+
+        if (runningTask) {
+            activeTimerId = runningTask.id;
+            activeTimerStartTime = runningTask.timer_start_time;
+            runningTaskTimes[activeTimerId]=runningTask.time_spent_seconds;
+
+            timerInterval = setInterval(() => {
+            // 2. 计算从启动以来总共流逝的毫秒数 (即使浏览器被最小化了，这个差值也是正确的)
+            const elapsedMilliseconds = Date.now() - activeTimerStartTime;
+            const totalTimeSeconds = runningTaskTimes[activeTimerId] + Math.floor(elapsedMilliseconds / 1000); 
+
+            // 4. 更新 UI 显示
+            const timeDisplayElement = document.querySelector(`.time-display[data-task-id="${activeTimerId}"]`);
+            if (timeDisplayElement) {
+                // 使用精确计算后的总秒数来格式化时间，而不是 runningTaskTimes 的累加值
+                timeDisplayElement.textContent = formatTime(totalTimeSeconds); 
+            }
+
+        }, 500); // 注意：我们将间隔改为 500ms，每秒更新两次，让视觉更平滑。
+        }
+    }
+    // 注意：需要在 fetchTasks 成功后调用 checkRunningTimer(tasks)
+
+    async function startTimer(taskId) {
+        // 1. 如果有其他任务正在运行，先停止它 (逻辑不变)
+        if (activeTimerId && activeTimerId !== taskId) {
+            stopTimer(activeTimerId);
+        }
+
+        activeTimerId = taskId;
+        activeTimerStartTime = Date.now(); // 获取当前精确的毫秒时间戳
+
+        // 2. 立即将开始时间戳同步到后端 (关键)
+        const response = await fetch(`/api/tasks/${taskId}/track`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ 
+                user_id: currentUserId, 
+                timer_start_time: activeTimerStartTime // 将时间戳或 null 发送给后端
+            })
+        });
+        if(!response.ok){
+            const data = await response.json();
+            console.error('时间同步失败:', data.error);
+            showModal('同步失败', data.error || '无法保存计时状态。');
+            return false;
+        }
+
+        // 重新渲染任务列表来更新按钮状态
+        fetchTasks();
+    }
+
+    let isStopping = false;
+    async function stopTimer(taskId) {
+        if (isStopping) {
+            console.log('计时器已经在停止过程中，忽略本次调用。');
+            return; 
+        }
+        isStopping = true; // 设置请求锁
+
+        // 2. 核心计时逻辑
+        if (activeTimerStartTime === null) {
+            console.error("计时器未启动或状态已清除，无法停止。");
+            isStopping = false; // 解锁
+            return false;
+        }
+
+        // 1. 计算总用时
+        const currentTimestamp = Date.now();
+        const elapsedMilliseconds = currentTimestamp - activeTimerStartTime;
+        const elapsedSeconds = Math.floor(elapsedMilliseconds / 1000);
+
+        try{
+          // 3. 同步数据到后端 (将 timer_start_time 设为 null)
+          const response = await fetch(`/api/tasks/${taskId}/track`, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ 
+                  user_id: currentUserId, 
+                  time_spent: elapsedSeconds,
+                  timer_start_time:null
+              })
+          });
+          if (!response.ok) {
+              const data = await response.json();
+              console.error('时间同步失败:', data.error);
+              showModal('同步失败', data.error || '无法保存计时状态。');
+              return false;
+          }
+
+          // 4. 清除本地状态
+          clearInterval(timerInterval);
+          timerInterval = null;
+          activeTimerId = null;
+          activeTimerStartTime = null;
+
+          fetchTasks(); 
+          return true;
+          
+        } catch(error){
+          console.error('网络或服务器连接失败:', error);
+          showModal('网络错误', '无法连接到服务器，请检查网络后重试。');
+          return false;
+        } finally {
+          isStopping=false;
+        }
+    }
+
+    // 监听任务
+    async function fetchTasks() {
+        if (!currentUserId) return;
+        const response = await fetch(`/api/tasks`);
+        const data = await response.json();
+        const tasks=data.tasks_list;
+        const week_record=data.week_record;
+        const now = new Date();
+        // const isPlanningWindow = (now.getDay() === 0 && now.getHours() >= 20) || (now.getDay() === 1 && now.getHours() < 20);
+        // 创建 tasks1，包含所有 status 不为 'archived' 的任务
+        const tasks1 = tasks.filter(task => task.status !== 'archived');
+
+        // 创建 tasks2，包含所有 status 为 'archived' 的任务
+        // const tasks2 = tasks.filter(task => task.status === 'archived');
+
+        taskList.innerHTML = '';
+        tasks1.forEach(task => {
+            // 在渲染时，将后端传来的时间作为初始时间存入 runningTaskTimes
+            runningTaskTimes[task.id] = task.time_spent_seconds || 0; 
+
+            const isRunning = task.timer_start_time !==null;
+
+            const e = document.createElement('div');
+            e.className = `bg-opacity-50 relative bg-gray-50 p-4 rounded-lg shadow-sm border border-gray-200 flex flex flex-col  justify-between ${task.status ==='completed' ? 'opacity-50':''}`;
+            e.innerHTML = `
+            <div class="justify-start ">
+              <p class="text-sm text-gray-500 mb-1">特性: ${task.type} <span class="${task.status ==='completed' ? '':'hidden'}">(${task.points}分)</span> </p>
+              <p class="text-sm text-gray-500 mb-1">时间: ${task.created_at}</p>
+              <p class="text-gray-700 font-medium">${task.description}</p>
+            </div>
+              <div class="absolute top-0 right-4 mt-1 font-mono  text-2xl rounded-full py-2 px-4 transition-colors ${task.status ==='completed' ? '':'time-display'} ${isRunning ? 'text-blue-500 font-semibold' : 'text-gray-500'}" data-task-id="${task.id}">
+                        ${formatTime(runningTaskTimes[task.id])}
+              </div>
+
+              <div class="flex justify-end space-x-3 items-end mt-2">
+                ${task.status !=='completed' ? 
+                  `<button data-task-id="${task.id}" class="delete-task-btn bg-gray-300 text-white font-bold py-2 px-4 h-10 rounded-lg hover:bg-gray-400 transition-colors">
+                    ×
+                  </button>` 
+                : ''}
+                <button data-task-id="${task.id}" class="complete-task-btn bg-green-500 text-white font-bold py-2 px-7  h-10 rounded-lg hover:bg-green-600 transition-colors ${task.status ==='completed' ? 'hidden':''}">
+                  ✔︎
+                </button>
+              </div>
+            
+            `;
+            taskList.appendChild(e);
+        });
+
+        checkRunningTimer(tasks1);
+
+        weekRecordList.innerHTML = '';
+        week_record.forEach(item=>{
+              let ave_daytime=Math.floor(item.total_time/7);
+              const el = document.createElement('div');
+              el.className = 'bg-opacity-50 week-record-btn relative bg-gray-50 p-4 rounded-lg shadow-sm border border-gray-200 flex items-center justify-between';
+              el.dataset.recordId = item.id;
+              el.innerHTML = `
+                <div>
+                  <p class="text-gray-700 font-medium mb-1">${item.name}</p>
+                  <p class="absolute bottom-4 right-4 text-sm text-gray-500 mb-1">${item.created_at} </p>
+                  <p class="text-sm text-gray-500 mb-1">积分: ${item.total_points} 分(${item.total_num}个任务)</p>
+                  <p class="text-sm text-gray-500 mb-1">日均耗时: ${Math.floor(ave_daytime/3600)}小时${Math.floor((ave_daytime%3600)/60)}分钟${ave_daytime%60}秒 </p>
+                  <p class="text-sm text-gray-500 mb-1">周总耗时: ${Math.floor(item.total_time/3600)}小时${Math.floor((item.total_time%3600)/60)}分钟${item.total_time%60}秒 </p>
+                </div>`;
+              weekRecordList.appendChild(el);
+            
+        });
+        
+        document.querySelectorAll('.week-record-btn').forEach(btn=>{
+          btn.addEventListener('click', async (e)=>{
+            const weekrecordId = parseInt(e.target.getAttribute('data-record-id'));
+
+            window.location.href = `/weekrecord?week_record=${weekrecordId}`;
+          })
+        })
+
+
+        document.querySelectorAll('.time-display').forEach(btn=>{
+          btn.addEventListener('click', async (e)=>{
+            // 新增：计时器切换按钮逻辑
+            const taskId = parseInt(e.target.getAttribute('data-task-id'));
+
+            if (activeTimerId === taskId) {
+                // 当前任务正在计时，点击是暂停
+                stopTimer(taskId);
+            } else {
+                // 当前任务未计时，点击是开始
+                startTimer(taskId);
+            }            
+          })
+        })
+
+
+        document.querySelectorAll('.complete-task-btn').forEach(btn=>{
+          btn.addEventListener('click', async (e)=>{
+            const taskId = e.currentTarget.dataset.taskId;
+            if (activeTimerId == taskId) {
+                await stopTimer(activeTimerId);
+            }
+            try {
+                const response = await fetch(`/api/tasks/${taskId}/complete`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ user_id: currentUserId })
+                });
+                const data = await response.json();
+
+                if (response.ok) {
+                    showModal('🎉任务完成🎉', `😽获得积分${data.points}分！总计耗时${Math.floor(data.time_spent_seconds/3600)}小时${Math.floor((data.time_spent_seconds%3600)/60)}分钟${data.time_spent_seconds%60}秒。`);
+                    fetchTasks(); // 刷新任务列表
+                    fetchUserInfo();
+                    // TODO: 刷新用户积分显示
+                } else {
+                    showModal('操作失败', data.error);
+                }
+            } catch (error) {
+                showModal('网络错误', error);
+            }
+          });
+        });
+
+        document.querySelectorAll('.delete-task-btn').forEach(btn=>{
+          btn.addEventListener('click', async (e)=>{
+            const taskId = e.currentTarget.dataset.taskId;
+            if (activeTimerId == taskId) {
+                await stopTimer(activeTimerId);
+            }
+            showModal(`删除任务`,'确认删除此任务？',true,async ()=>{
+            try{
+              const response = await fetch(`/api/tasks/${taskId}/delete`, {
+                    method: 'DELETE',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ user_id: currentUserId })
+                });
+              const data = await response.json();
+
+                if (response.ok) {
+                    fetchTasks(); // 刷新任务列表
+                    // TODO: 刷新用户积分显示
+                } else {
+                    showModal('操作失败', data.error);
+                }
+            } catch(error){
+              showModal('网络错误', '无法连接到服务器。');
+            }
+          });
+          });
+        });
+    }
+
+    // 提交任务表单
+    taskForm?.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const description = document.getElementById('task-description').value.trim();
+        const significance = document.getElementById('task-significance').value;
+        const urgency = document.getElementById('task-urgency').value;
+        const complexity = document.getElementById('task-complexity').value;
+        if (!description) return;
+        const type = `${significance}-${urgency}-${complexity}`;
+
+        try {
+            const response = await fetch('/api/tasks', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    user_id: currentUserId,
+                    description,
+                    type
+                })
+            });
+            const data = await response.json();
+
+            if (response.ok) {
+                // showModal('任务添加成功', data.message);
+                taskForm.reset();
+                fetchTasks(); // 重新获取并渲染任务列表
+            } else {
+                showModal('任务添加失败', data.error);
+            }
+        } catch (error) {
+            showModal('网络错误', '无法连接到服务器。');
+        }
+    });
+
+    // 获取 DOM 元素
+    const privateItemImageInput = document.getElementById('private-item-image');
+    const publicShopItems = document.getElementById('public-shop-items');
+    const privateShopItems = document.getElementById('private-shop-items');
+    const createPrivateItemForm = document.getElementById('create-private-shop-item-form');
+    const redeemedItemsList = document.getElementById('redeemed-items-list');
+    let rate=document.getElementById('exchange_rate');
+
+
+    // 获取商品列表
+    async function fetchShopItems(){
+      if (!currentUserId) return;
+      const publicResponse = await fetch(`/api/shop/public`);
+      const publicItems = await publicResponse.json();
+
+        publicShopItems.innerHTML = '';
+        publicItems.forEach((d)=>{
+          const item = d; const id = d.id;
+          const el = document.createElement('div');
+          el.className = 'bg-opacity-50 bg-white rounded-lg shadow-md p-4 flex flex-row space-x-4 md:flex-col md:space-x-0 md:items-center md:space-y-4';
+          el.innerHTML = `
+                <div class="flex-shrink-0 w-1/3 h-28 md:w-full md:h-40">
+                    <img src="${item.image}" alt="${item.name}" class="rounded-lg object-cover w-full h-full">
+                </div>
+                
+                <div class="flex flex-col justify-between w-2/3 md:w-full md:items-center md:space-y-2"> 
+                    
+                    <h3 class="font-bold text-lg">${item.name}</h3>
+                    <p class="text-gray-600">${item.points} 积分</p>
+                    
+                    <div class="flex space-x-1">
+                        <button data-item-id="${id}" data-item-name="${item.name}" data-item-points="${item.points}"
+                            class="buy-item-btn whitespace-nowrap w-1/2 bg-blue-500 text-white text-sm font-bold py-2 px-4 rounded-lg hover:bg-blue-600 transition-colors">兑换</button>
+                    
+                        <button data-item-id="${id}" class="w-1/4 edit-item-btn bg-yellow-500 text-white text-sm py-2 px-2 rounded-lg hover:bg-yellow-600 transition-colors">✐</button>
+                        <button data-item-id="${id}" class="w-1/4 delete-item-btn bg-gray-300 text-white text-sm py-2 px-2 rounded-lg hover:bg-gray-400 transition-colors">×</button>
+                    </div>
+                </div>
+                    `;
+          publicShopItems.appendChild(el);
+        });
+
+
+      const privateResponse = await fetch(`/api/shop/private/${currentUserId}`);
+      const privateItems = await privateResponse.json();
+        privateShopItems.innerHTML = '';
+
+        // ... 你的商品列表遍历代码
+
+        privateItems.forEach((d) => {
+            const item = d;
+            const id = d.id;
+            const el = document.createElement('div');
+
+            el.className = 'bg-opacity-50 bg-white rounded-lg shadow-md p-4 flex flex-row space-x-4 md:flex-col md:space-x-0 md:items-center md:space-y-4';        
+            el.innerHTML = `
+                <div class="flex-shrink-0 w-1/3 h-28 md:w-full md:h-40">
+                    <img src="${item.image}" alt="${item.name}" class="rounded-lg object-cover w-full h-full">
+                </div>
+                
+                <div class="flex flex-col justify-between w-2/3 md:w-full md:items-center md:space-y-2"> 
+                    
+                    <h3 class="font-bold text-lg">${item.name}</h3>
+                    <p class="text-gray-600">${item.points} 积分</p>
+                    
+                    <div class="flex space-x-1">
+                        <button data-item-id="${id}" data-item-name="${item.name}" data-item-points="${item.points}"
+                            class=" buy-item-btn whitespace-nowrap w-1/2 bg-blue-500 text-white text-sm font-bold py-2 px-4 rounded-lg hover:bg-blue-600 transition-colors">兑换</button>
+                    
+                        <button data-item-id="${id}" class="w-1/4 edit-item-btn bg-yellow-500 text-white text-sm py-2 px-2 rounded-lg hover:bg-yellow-600 transition-colors">✐</button>
+                        <button data-item-id="${id}" class="w-1/4 delete-item-btn bg-gray-300 text-white text-sm py-2 px-2 rounded-lg hover:bg-gray-400 transition-colors">×</button>
+                    </div>
+                </div>
+            `;
+            privateShopItems.appendChild(el);
+        });
+
+        // 兑换
+        document.querySelectorAll('.buy-item-btn').forEach(btn=>{
+          btn.addEventListener('click', async (e)=>{
+            const itemName = e.currentTarget.dataset.itemName;
+            const itemId = e.currentTarget.dataset.itemId;
+
+            const response = await fetch(`/api/shop/redeem`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        user_id: currentUserId,
+                        item_id: itemId
+                    })
+                });
+                const data = await response.json();
+
+                if (response.ok) {
+                    showModal('兑换成功', `您已成功兑换 ${itemName}！`);
+                    currentPointsDisplay.textContent = data.current_points;
+                    fetchShopItems();
+                    fetchUserInfo();
+                } else {
+                    showModal('兑换失败', data.error);
+                }
+          });
+        });
+        // 修改
+        document.querySelectorAll('.edit-item-btn').forEach(btn=>{
+          btn.addEventListener('click', async (e)=>{
+            const itemName = e.currentTarget.dataset.itemName;
+            const itemId = e.currentTarget.dataset.itemId;
+            const newPoints = prompt("请输入新的商品价格（人民币）:");
+            if (!newPoints || isNaN(parseInt(newPoints))) return;
+              const response = await fetch(`/api/shop/alter`, {
+                      method: 'POST',
+                      headers: { 'Content-Type': 'application/json' },
+                      body: JSON.stringify({
+                          user_id: currentUserId,
+                          item_id: itemId,
+                          item_points: parseInt(newPoints)
+                      })
+                  });
+                  const data = await response.json();
+                  if (response.ok) {
+                      showModal('修改成功', `您已成功修改 ${data.name}！`);
+                      fetchShopItems();
+                  } else {
+                      showModal('兑换失败', data.error);
+                  }
+          });
+        });
+
+
+        // 删除
+        document.querySelectorAll('.delete-item-btn').forEach(btn=>{
+          btn.addEventListener('click', async (e)=>{
+            const itemName = e.currentTarget.dataset.itemName;
+            const itemId = e.currentTarget.dataset.itemId;
+              const response = await fetch(`/api/shop/delete`,{
+                  method: 'DELETE',
+                  headers: { 'Content-Type': 'application/json' },
+                  body: JSON.stringify({
+                      user_id: currentUserId,
+                      item_id: itemId
+                  })
+                  })
+                  const data = await response.json();
+
+                  if (response.ok) {
+                      showModal('删除成功', `您已成功删除 ${data.name}！`);
+                      currentPointsDisplay.textContent = data.current_points;
+                      fetchShopItems();
+                  } else {
+                      showModal('删除失败', data.error);
+                  }
+
+          });
+
+          });
+      };
+
+
+    // 监听自定义商品表单提交
+    createPrivateItemForm.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const name = document.getElementById('private-item-name').value;
+        const type = document.getElementById('private-item-type').value;
+        const imageFile = privateItemImageInput.files[0];
+        let points = document.getElementById('private-item-points').value;
+        points=Math.abs(parseInt(points));
+        
+        // let imageUrl = 'https://placehold.co/100x100/FBCFE8/ffffff?text=mate';
+        let imageUrl;
+
+        if (imageFile) {
+            imageUrl = await uploadFile(imageFile);
+            if (!imageUrl) {
+                return; // 如果图片上传失败，停止执行
+            }
+        }
+
+        try {
+            const response = await fetch('/api/shop/private', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    user_id: currentUserId,
+                    name: name,
+                    points: points,
+                    type: type,
+                    image: imageUrl,
+                    rate: parseInt(rate.value)
+                })
+            });
+            const data = await response.json();
+            if (response.ok) {
+                createPrivateItemForm.reset();
+                rate.value=data.rate;
+                fetchShopItems();
+            } else {
+                showModal('添加失败', data.error);
+            }
+        } catch (error) {
+            showModal('网络错误', '无法连接到服务器。');
+        }
+    });
+
+
+
+    // 新增：显示昵称，若未设置则显示默认值
+    const nicknameDisplay = document.getElementById('nickname-display');
+    // 新增：昵称编辑功能
+    const nicknameDisplayArea = document.getElementById('nickname-display-area');
+    const nicknameEditArea = document.getElementById('nickname-edit-area');
+    const editNicknameBtn = document.getElementById('edit-nickname-btn');
+    const nicknameInput = document.getElementById('nickname-input');
+    const saveNicknameBtn = document.getElementById('save-nickname-btn');
+
+    // 点击编辑按钮，显示输入框
+    editNicknameBtn.addEventListener('click', () => {
+        nicknameDisplayArea.classList.add('hidden');
+        nicknameEditArea.classList.remove('hidden');
+        nicknameInput.focus();
+    });
+
+    // 点击保存按钮，保存昵称
+    saveNicknameBtn.addEventListener('click', async () => {
+        const newNickname = nicknameInput.value.trim();
+        if (!newNickname) {
+            showModal('提示', '昵称不能为空。');
+            return;
+        }
+
+        try {
+            const response = await fetch('/api/user/nickname', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    user_id: currentUserId,
+                    newNickname
+                })
+            });
+            // const data=response.json();
+            if (response.ok) {
+                showModal('成功', '昵称更新成功！');
+                nicknameInput.value="";
+                nicknameEditArea.classList.add('hidden');
+                nicknameDisplayArea.classList.remove('hidden');
+                nicknameDisplay.textContent=newNickname;
+            } else {
+                showModal('修改昵称失败', data.error);
+            }
+        } catch (error) {
+            console.error("更新昵称失败:", error);
+            showModal('失败', '更新失败，请稍后再试。');
+        }
+    });
+    
+
+
+    // 获取 DOM 元素
+    const saveAvatarBtn = document.getElementById('save-avatar-btn');
+    const avatarFileInput = document.getElementById('avatar-file-input');
+    const userAvatar = document.getElementById('user-avatar');
+    const avatarDisplayArea = document.getElementById('avatar-display-area');
+    const editAvatarBtn = document.getElementById('edit-avatar-btn');
+    const uploadAvatarForm = document.getElementById('upload-avatar-form');
+
+
+    const userIdDisplayMy = document.getElementById('user-id-display-my');
+    const currentPointsDisplay = document.getElementById('current-points');
+    const totalPointsDisplay = document.getElementById('total-points');
+
+
+    // 点击编辑按钮，显示输入框
+    editAvatarBtn.addEventListener('click', () => {
+        avatarDisplayArea.classList.add('hidden');
+        uploadAvatarForm.classList.remove('hidden');
+    });
+
+    // 上传文件的通用函数
+    async function uploadFile(file) {
+        const formData = new FormData();
+        formData.append('file', file);
+
+        try {
+            const response = await fetch('/api/upload', {
+                method: 'POST',
+                body: formData
+            });
+
+            const data = await response.json();
+            if (response.ok) {
+                return data.url; // 返回上传后的图片URL
+            } else {
+                showModal('上传失败', data.error);
+                return null;
+            }
+        } catch (error) {
+            showModal('网络错误', error);
+            return null;
+        }
+    }
+
+    // 监听头像上传表单提交
+    saveAvatarBtn.addEventListener('click', async (e) => {
+        e.preventDefault();
+        const file = avatarFileInput.files[0];
+        if (!file) {
+            showModal('上传失败', '请选择一个图片文件。');
+            return;
+        }
+
+        const imageUrl = await uploadFile(file);
+        if (imageUrl) {
+            // 更新用户头像URL
+            try {
+                const response = await fetch('/api/user/update_avatar', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ user_id: currentUserId, avatar_url: imageUrl })
+                });
+                const data = await response.json();
+                if (response.ok) {
+                    showModal('头像更新成功', '你的新头像已保存。');
+                    uploadAvatarForm.classList.add('hidden');
+                    avatarDisplayArea.classList.remove('hidden');
+                    userAvatar.src = imageUrl;
+                } else {
+                    showModal('更新失败', data.error);
+                }
+            } catch (error) {
+                showModal('网络错误', '无法更新头像。');
+            }
+        }
+    });
+
+        // 渲染兑换记录
+    function renderRedeemedItems(items) {
+        redeemedItemsList.innerHTML = '';
+        items.forEach((d)=>{
+          const item = d;
+          const el = document.createElement('div');
+          el.className = 'bg-opacity-50 bg-white rounded-lg shadow-md p-4 flex flex-row space-x-4 md:flex-col md:space-x-0 md:items-start md:space-y-4';
+          el.innerHTML = `
+                <div class="flex-shrink-0 w-1/3 h-28 md:w-full md:h-40">
+                    <img src="${item.image}" alt="${item.name}" class="rounded-lg object-cover w-full h-full">
+                </div>
+            <div class="flex flex-col relative justify-end w-2/3 md:w-full">
+              <p class="text-gray-600 text-sm">${item.name}</p>
+              <p class="text-gray-600 text-sm">${item.points} 积分</p>
+              <p class="text-gray-600 text-sm">${item.redeemed_at}</p>
+            </div>`;
+          redeemedItemsList.appendChild(el);
+        });
+    }
+
+    // 获取用户信息和兑换记录
+    async function fetchUserInfo() {
+        if (!currentUserId) return;
+        try {
+            const response = await fetch(`/api/user/${currentUserId}`);
+            const user = await response.json();
+            
+            nicknameDisplay.textContent = user.nickname;
+            userIdDisplayMy.textContent = currentUserId; // 这里根据需要显示ID或昵称
+            currentPointsDisplay.textContent = user.current_points;
+            totalPointsDisplay.textContent = user.total_earned_points;
+            userAvatar.src = user.avatar;
+            rate.value=user.rate;
+            
+            renderRedeemedItems(user.redeemed_items);
+
+        } catch (error) {
+            console.error('获取用户信息失败:', error);
+        }
+    }
+
+
+
+    async function checkLoginAndRender() {
+    // 1. 显示加载中状态，防止闪烁
+      appContainer.classList.add('hidden');
+      loginModal.style.display = 'none';
+
+      try {
+          const response = await fetch('/api/check_login_status');
+          const data = await response.json();
+
+          if (data.is_logged_in) {
+              // **关键：用户已登录！调用统一的初始化函数**
+              initializeApp(data.user_id);
+          } else {
+              // 用户未登录：显示登录/注册界面
+              showPage('intro-page');
+              loadingContainer.classList.add('hidden');
+          }
+      } catch (error) {
+          console.error('Error checking login status:', error);
+          // 如果网络错误，可以显示错误信息或保持登录界面
+          showPage('intro-page');
+          loadingContainer.classList.add('hidden');
+      }
+}
+
+// 确保在 DOM 加载完成后调用
+// document.addEventListener('DOMContentLoaded', checkLoginAndRender);
+
+
+    //个人新增变量和函数
+    //新增变量
+    const introLoginBtn = document.getElementById('intro-login-btn');
+
+    // 新增：介绍页登录按钮
+    introLoginBtn.addEventListener('click', ()=>{
+      loginModal.style.display = 'flex';
+    });
+
+    // 页面加载时的初始化
+    window.onload = () => {
+        // 页面初始加载时，显示加载状态，然后显示登录模态框
+        checkLoginAndRender();
+    };
+  </script>
+</body>
+</html>

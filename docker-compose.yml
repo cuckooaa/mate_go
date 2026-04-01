@@ -1,0 +1,24 @@
+version: '3.8'
+
+services:
+  mysql:
+    image: mysql:8.0  # 使用官方的 MySQL 8.0 镜像
+    container_name: mate_mysql  # 给容器起个名字
+    restart: always
+    environment:
+      MYSQL_ROOT_PASSWORD: rootpassword  # 设置 root 密码，本地开发可以简单点
+      MYSQL_DATABASE: mate_db          # 启动时自动为你创建一个名为 mate_db 的数据库
+    ports:
+      - "3406:3306"  # 将电脑的 3306 端口映射到容器的 3306 端口
+    volumes:
+      - mysql_data:/var/lib/mysql  # 数据持久化，防止容器重启后数据丢失
+
+  redis:
+    image: redis:7.0  # 使用官方的 Redis 7.0 镜像
+    container_name: mate_redis
+    restart: always
+    ports:
+      - "6379:6379"  # 将电脑的 6379 端口映射到容器的 6379 端口
+
+volumes:
+  mysql_data:  # 声明上面用到的大容量存储卷
