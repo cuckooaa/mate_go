@@ -4,7 +4,9 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Mate - 用积分管理你的效率！</title>
-  <link rel="icon" type="image/png" href="/static/a4.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/static/a4.png">
+  <link rel="icon" type="image/png" sizes="192x192" href="/static/a4.png">
+  <link rel="apple-touch-icon" sizes="180x180" href="/static/a4.png">
   <link rel="shortcut icon" href="/static/a4.png">
   <script src="https://cdn.tailwindcss.com"></script>
   <style>
@@ -40,6 +42,14 @@
 
     .loading-container { display:flex; justify-content:center; align-items:center; min-height:100vh; }
     .loading-spinner { border:4px solid rgba(0,0,0,0.1); width:36px; height:36px; border-radius:50%; border-left-color:#3b82f6; animation:spin 1s ease infinite; }
+    .layout-left-panel { position: static; top: auto; align-self: auto; }
+    .layout-right-panel { overflow: visible; }
+    @media (min-width: 1024px) {
+      .layout-left-panel { position: sticky; top: 1rem; align-self: start; max-height: calc(100vh - 2rem); }
+      .layout-right-panel { overflow-y: overlay; padding-right: 2rem; max-height: calc(100vh - 2rem); }
+      .layout-right-panel::-webkit-scrollbar { width: 8px; }
+      .layout-right-panel::-webkit-scrollbar-thumb { background: rgba(148,163,184,.6); border-radius: 9999px; }
+    }
     @keyframes spin { 0%{transform:rotate(0)} 100%{transform:rotate(360deg)} }
     .page{ display:none; } .page.active{ display:block; }
     .modal{ position:fixed; inset:0; width:100%; height:100%; background:rgba(0,0,0,.5); display:none; justify-content:center; align-items:center; z-index:1000; }
@@ -56,7 +66,7 @@
     <div class="loading-spinner"></div>
   </div>
 
-  <div id="app-container" class=" hidden bg-white rounded-2xl shadow-xl p-8 w-full max-w-none pb-20 md:pb-8 min-h-screen">
+  <div id="app-container" class=" hidden bg-white rounded-2xl shadow-xl p-8 w-full max-w-none pb-20 md:pb-8 min-h-screen lg:overflow-hidden lg:min-h-[calc(100vh-2rem)]">
     <header id="main-header" class="flex flex-col mb-4">
 
       <div class="flex justify-between items-center mb-4 ">
@@ -78,11 +88,10 @@
     </header>
 
       <div id="plan-page" class="page active">
-        <div class="lg:grid lg:grid-cols-5 lg:gap-8">
-          <div class="lg:col-span-2 lg:flex lg:flex-col lg:min-h-[calc(100vh-2rem)]">
+        <div class="lg:flex lg:gap-8 lg:h-[calc(100vh-2rem)] lg:overflow-hidden">
+          <div class="lg:w-[40%] lg:flex lg:flex-col layout-left-panel">
             <div id="plan-left-header-slot" class="hidden lg:block"></div>
             <form id="task-form" class="mb-8">
-        <p id="task-form-status" class="text-center mb-4 text-sm font-medium"></p>
         <p id="rules-page-btn" class="text-center mb-4 text-sm font-medium text-blue-600">新手指南</p>
         <div class="space-y-4">
           <h3 class="text-xl font-bold text-gray-700 mb-2">添加任务</h3>
@@ -121,7 +130,7 @@
             </form>
           </div>
 
-          <div class="lg:col-span-3 lg:min-h-[calc(100vh-2rem)]">
+          <div class="lg:flex-1 lg:min-h-[calc(100vh-2rem)] layout-right-panel">
         <div class="flex justify-between items-center mb-4">
           <h2 class="text-2xl font-bold text-gray-800">本周任务列表</h2>
           <a href="/rankinglist" class="text-sm font-medium text-blue-600">本周积分榜</a>
@@ -145,8 +154,8 @@
 
 
       <div id="shop-page" class="page">
-      <div class="lg:grid lg:grid-cols-5 lg:gap-8">
-        <div class="lg:col-span-2 lg:flex lg:flex-col lg:min-h-[calc(100vh-2rem)]">
+      <div class="lg:flex lg:gap-8 lg:h-[calc(100vh-2rem)] lg:overflow-hidden">
+        <div class="lg:w-[40%] lg:flex lg:flex-col layout-left-panel">
           <div id="shop-left-header-slot" class="hidden lg:block"></div>
 
           <div class="mb-8">
@@ -184,7 +193,7 @@
           </div>
         </div>
 
-        <div class="lg:col-span-3 lg:min-h-[calc(100vh-2rem)]">
+        <div class="lg:flex-1 lg:min-h-[calc(100vh-2rem)] layout-right-panel">
           <h2 class="text-2xl font-bold text-gray-800 mb-2">公共商品</h2>
           <div id="public-shop-items" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6 mb-8"></div>
 
@@ -196,8 +205,8 @@
 
 
       <div id="my-page" class="page">
-      <div class="lg:grid lg:grid-cols-5 lg:gap-8">
-        <div class="lg:col-span-2 lg:flex lg:flex-col lg:items-center lg:justify-start lg:min-h-[calc(100vh-2rem)]">
+      <div class="lg:flex lg:gap-8 lg:h-[calc(100vh-2rem)] lg:overflow-hidden">
+        <div class="lg:w-[40%] lg:flex lg:flex-col lg:items-center lg:justify-start  layout-left-panel">
           <div id="my-left-header-slot" class="hidden lg:block w-full"></div>
       <div class="flex items-center justify-center mb-8">
           <div id="nickname-display-area" class="flex items-center space-x-2">
@@ -254,7 +263,7 @@
         </div>
       </div>
         </div>
-        <div class="lg:col-span-3 lg:min-h-[calc(100vh-2rem)]">
+        <div class="lg:flex-1 lg:min-h-[calc(100vh-2rem)] layout-right-panel">
           <h2 class="text-2xl font-bold text-gray-800 mb-2">兑换过的商品</h2>
           <div id="redeemed-items-list" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6"></div>
         </div>
