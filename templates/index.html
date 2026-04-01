@@ -5,6 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Mate - 用积分管理你的效率！</title>
   <link rel="icon" type="image/png" href="/static/a4.png">
+  <link rel="shortcut icon" href="/static/a4.png">
   <script src="https://cdn.tailwindcss.com"></script>
   <style>
     html {
@@ -78,17 +79,19 @@
 
       <div id="plan-page" class="page active">
         <div class="lg:grid lg:grid-cols-5 lg:gap-8">
-          <div class="lg:col-span-2">
+          <div class="lg:col-span-2 lg:flex lg:flex-col lg:min-h-[calc(100vh-2rem)]">
+            <div id="plan-left-header-slot" class="hidden lg:block"></div>
             <form id="task-form" class="mb-8">
         <p id="task-form-status" class="text-center mb-4 text-sm font-medium"></p>
         <p id="rules-page-btn" class="text-center mb-4 text-sm font-medium text-blue-600">新手指南</p>
         <div class="space-y-4">
+          <h3 class="text-xl font-bold text-gray-700 mb-2">添加任务</h3>
           <div>
             <label for="task-description" class="block text-sm font-medium text-gray-700 mb-1">任务描述</label>
             <input type="text" id="task-description" placeholder="例如：完成毕业设计第一章" required
                    class="bg-opacity-50 bg-white w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
           </div>
-          <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div class="grid grid-cols-1 gap-4">
             <div>
               <label class="block text-sm font-medium text-gray-700 mb-1">重要性 (s/ns)</label>
               <select id="task-significance" class="bg-opacity-50 bg-white w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
@@ -118,7 +121,7 @@
             </form>
           </div>
 
-          <div class="lg:col-span-3">
+          <div class="lg:col-span-3 lg:min-h-[calc(100vh-2rem)]">
         <div class="flex justify-between items-center mb-4">
           <h2 class="text-2xl font-bold text-gray-800">本周任务列表</h2>
           <a href="/rankinglist" class="text-sm font-medium text-blue-600">本周积分榜</a>
@@ -143,11 +146,12 @@
 
       <div id="shop-page" class="page">
       <div class="lg:grid lg:grid-cols-5 lg:gap-8">
-        <div class="lg:col-span-2">
-          <h2 class="text-2xl font-bold text-gray-800 mb-4 text-center lg:text-left">积分商城</h2>
+        <div class="lg:col-span-2 lg:flex lg:flex-col lg:min-h-[calc(100vh-2rem)]">
+          <div id="shop-left-header-slot" class="hidden lg:block"></div>
+
           <div class="mb-8">
             <h3 class="text-xl font-bold text-gray-700 mb-2">添加商品</h3>
-            <form id="create-private-shop-item-form" class="space-y-2 p-4 rounded-lg ">
+            <form id="create-private-shop-item-form" class="space-y-2 rounded-lg ">
           <div>
             <label for="private-item-name" class="block text-sm font-medium text-gray-700 mb-1">商品名</label>
             <input type="text" id="private-item-name" required class="bg-opacity-50 bg-white w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
@@ -180,11 +184,11 @@
           </div>
         </div>
 
-        <div class="lg:col-span-3">
-          <h3 class="text-xl font-bold text-gray-700 mb-2">公共商品</h3>
+        <div class="lg:col-span-3 lg:min-h-[calc(100vh-2rem)]">
+          <h2 class="text-2xl font-bold text-gray-800 mb-2">公共商品</h2>
           <div id="public-shop-items" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6 mb-8"></div>
 
-          <h3 class="text-xl font-bold text-gray-700 mb-2">我的商品</h3>
+          <h2 class="text-2xl font-bold text-gray-800 mb-2">我的商品</h2>
           <div id="private-shop-items" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6"></div>
         </div>
       </div>
@@ -193,8 +197,9 @@
 
       <div id="my-page" class="page">
       <div class="lg:grid lg:grid-cols-5 lg:gap-8">
-        <div class="lg:col-span-2">
-      <div class="flex items-center justify-center lg:justify-start mb-8">
+        <div class="lg:col-span-2 lg:flex lg:flex-col lg:items-center lg:justify-start lg:min-h-[calc(100vh-2rem)]">
+          <div id="my-left-header-slot" class="hidden lg:block w-full"></div>
+      <div class="flex items-center justify-center mb-8">
           <div id="nickname-display-area" class="flex items-center space-x-2">
               <h2 id="nickname-display" class="text-3xl font-bold text-gray-800">未设置昵称</h2>
               <button id="edit-nickname-btn" class="p-1 rounded-full text-gray-300 hover:bg-gray-100 transition-colors">
@@ -212,8 +217,8 @@
           </div>
       </div>
 
-      <div class="flex flex-col items-center lg:items-start space-y-4 mb-8">
-        <div class="flex items-center justify-center lg:justify-start w-full">
+      <div class="flex flex-col items-center space-y-4 mb-8">
+        <div class="flex items-center justify-center w-full">
           <div id="avatar-display-area" class="relative flex items-center space-x-2 w-28">
                 <div class="w-24 h-24 rounded-full border-4 border-white shadow-lg overflow-hidden">
                   <img id="user-avatar" class="w-full h-full object-cover" 
@@ -249,8 +254,8 @@
         </div>
       </div>
         </div>
-        <div class="lg:col-span-3">
-          <h3 class="text-xl font-bold text-gray-700 mb-2">兑换过的商品</h3>
+        <div class="lg:col-span-3 lg:min-h-[calc(100vh-2rem)]">
+          <h2 class="text-2xl font-bold text-gray-800 mb-2">兑换过的商品</h2>
           <div id="redeemed-items-list" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6"></div>
         </div>
       
@@ -488,6 +493,31 @@
         } else {
             mainHeader.style.display = 'none';
         }
+
+        // 大屏专属：把 header 放进左侧栏位（2:3 布局的左边）
+        const isLarge = window.matchMedia('(min-width: 1024px)').matches;
+        if (isLarge) {
+          const slotMap = {
+            'plan-page': document.getElementById('plan-left-header-slot'),
+            'shop-page': document.getElementById('shop-left-header-slot'),
+            'my-page': document.getElementById('my-left-header-slot'),
+          };
+          const slot = slotMap[pageId];
+          if (slot) {
+            slot.classList.remove('hidden');
+            slot.prepend(mainHeader);
+          }
+        } else {
+          // 小屏保持原样：header 放回 app 顶部
+          const firstChild = appContainer.firstElementChild;
+          if (firstChild !== mainHeader) {
+            appContainer.prepend(mainHeader);
+          }
+          ['plan-left-header-slot','shop-left-header-slot','my-left-header-slot'].forEach(id=>{
+            const el = document.getElementById(id);
+            if (el) el.classList.add('hidden');
+          })
+        }
     }
 
     // 新增：处理页面导航
@@ -667,37 +697,30 @@
     async function checkAndPerformSettlement() {
       if (!currentUserId) return;
 
-      // 仅在“周日 20:00 ~ 周一 20:00（上海时区）”结算窗口内自动触发
+      // 维持旧逻辑：只要上次结算时间早于“上周星期天 0 点”，则进行结算并更新结算时间
       const now = new Date();
       const shNow = new Date(now.toLocaleString('en-US', { timeZone: 'Asia/Shanghai' }));
-      const day = shNow.getDay(); // 0=Sun, 1=Mon
-      const hour = shNow.getHours();
-      const inWindow = (day === 0 && hour >= 20) || (day === 1 && hour < 20);
-      if (!inWindow) return;
 
       const response = await fetch(`/api/${currentUserId}/lastSettlementDate`, {
-                    method: 'GET',
-                    headers: { 'Content-Type': 'application/json' }
-                });
+        method: 'GET',
+        headers: { 'Content-Type': 'application/json' }
+      });
       const data = await response.json();
 
       const lastSettlementDate = data.last_settlement_date ? new Date(data.last_settlement_date) : null;
       if (!lastSettlementDate || Number.isNaN(lastSettlementDate.getTime())) {
-        // 后端返回空/非法时间则不自动结算，避免刷新时反复结算
         return;
       }
-      
-      // 计算本次结算窗口起点：最近一次“周日 20:00（上海时区）”
-      const startOfSettlementWindow = new Date(shNow);
-      startOfSettlementWindow.setDate(shNow.getDate() - shNow.getDay()); // 本周日
-      startOfSettlementWindow.setHours(20, 0, 0, 0);
 
-      // 如果上次结算时间在本次结算窗口开始之后，则说明本周已结算，直接返回
-      if (lastSettlementDate.getTime() >= startOfSettlementWindow.getTime()) {
-        return;
+      // 计算“上周星期天 0 点”（上海时区）
+      const lastSundayMidnight = new Date(shNow);
+      lastSundayMidnight.setDate(shNow.getDate() - shNow.getDay()); // 本周日
+      lastSundayMidnight.setHours(0, 0, 0, 0);
+      lastSundayMidnight.setDate(lastSundayMidnight.getDate() - 7); // 上周日 00:00
+
+      if (lastSettlementDate.getTime() < lastSundayMidnight.getTime()) {
+        await performWeeklySettlement();
       }
-      
-      await performWeeklySettlement();
     }
     async function performWeeklySettlement(){
       try {
@@ -873,8 +896,9 @@
         if (!currentUserId) return;
         const response = await fetch(`/api/tasks`);
         const data = await response.json();
-        const tasks=data.tasks_list;
-        const week_record=data.week_record;
+        // 关键：后端在空数组时可能返回 null，必须兜底，否则后面 forEach 会抛错导致按钮事件不绑定
+        const tasks = Array.isArray(data.tasks_list) ? data.tasks_list : [];
+        const week_record = Array.isArray(data.week_record) ? data.week_record : [];
         const now = new Date();
         // const isPlanningWindow = (now.getDay() === 0 && now.getHours() >= 20) || (now.getDay() === 1 && now.getHours() < 20);
         // 创建 tasks1，包含所有 status 不为 'archived' 的任务
