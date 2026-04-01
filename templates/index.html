@@ -55,7 +55,7 @@
     <div class="loading-spinner"></div>
   </div>
 
-  <div id="app-container" class=" hidden bg-white rounded-2xl shadow-xl p-8 max-w-2xl w-full pb-20 md:pb-8 min-h-screen">
+  <div id="app-container" class=" hidden bg-white rounded-2xl shadow-xl p-8 w-full max-w-none pb-20 md:pb-8 min-h-screen">
     <header id="main-header" class="flex flex-col mb-4">
 
       <div class="flex justify-between items-center mb-4 ">
@@ -77,7 +77,9 @@
     </header>
 
       <div id="plan-page" class="page active">
-        <form id="task-form" class="mb-8">
+        <div class="lg:grid lg:grid-cols-5 lg:gap-8">
+          <div class="lg:col-span-2">
+            <form id="task-form" class="mb-8">
         <p id="task-form-status" class="text-center mb-4 text-sm font-medium"></p>
         <p id="rules-page-btn" class="text-center mb-4 text-sm font-medium text-blue-600">新手指南</p>
         <div class="space-y-4">
@@ -113,8 +115,10 @@
             添加任务
           </button>
         </div>
-        </form>
+            </form>
+          </div>
 
+          <div class="lg:col-span-3">
         <div class="flex justify-between items-center mb-4">
           <h2 class="text-2xl font-bold text-gray-800">本周任务列表</h2>
           <a href="/rankinglist" class="text-sm font-medium text-blue-600">本周积分榜</a>
@@ -131,17 +135,19 @@
           <div>
         <div id="week-record-list" class="space-y-4"></div>
         </div>
+          </div>
+        </div>
       </div>
     
 
 
       <div id="shop-page" class="page">
-      <h2 class="text-2xl font-bold text-gray-800 mb-4 text-center">积分商城</h2>
-
-
-      <div class="mb-8">
-        <h3 class="text-xl font-bold text-gray-700 mb-2">添加商品</h3>
-        <form id="create-private-shop-item-form" class="space-y-2 p-4 rounded-lg ">
+      <div class="lg:grid lg:grid-cols-5 lg:gap-8">
+        <div class="lg:col-span-2">
+          <h2 class="text-2xl font-bold text-gray-800 mb-4 text-center lg:text-left">积分商城</h2>
+          <div class="mb-8">
+            <h3 class="text-xl font-bold text-gray-700 mb-2">添加商品</h3>
+            <form id="create-private-shop-item-form" class="space-y-2 p-4 rounded-lg ">
           <div>
             <label for="private-item-name" class="block text-sm font-medium text-gray-700 mb-1">商品名</label>
             <input type="text" id="private-item-name" required class="bg-opacity-50 bg-white w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
@@ -170,20 +176,25 @@
           <button type="submit" class="w-full bg-blue-500 text-white font-bold py-2 px-4 rounded-lg hover:bg-blue-700 transition-colors">
             添加商品
           </button>
-        </form>
+            </form>
+          </div>
+        </div>
+
+        <div class="lg:col-span-3">
+          <h3 class="text-xl font-bold text-gray-700 mb-2">公共商品</h3>
+          <div id="public-shop-items" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6 mb-8"></div>
+
+          <h3 class="text-xl font-bold text-gray-700 mb-2">我的商品</h3>
+          <div id="private-shop-items" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6"></div>
+        </div>
       </div>
-
-
-      <h3 class="text-xl font-bold text-gray-700 mb-2">公共商品</h3>
-      <div id="public-shop-items" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6 mb-8"></div>
-
-      <h3 class="text-xl font-bold text-gray-700 mb-2">我的商品</h3>
-      <div id="private-shop-items" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6"></div>
     </div>
 
 
       <div id="my-page" class="page">
-      <div class="flex items-center justify-center mb-8">
+      <div class="lg:grid lg:grid-cols-5 lg:gap-8">
+        <div class="lg:col-span-2">
+      <div class="flex items-center justify-center lg:justify-start mb-8">
           <div id="nickname-display-area" class="flex items-center space-x-2">
               <h2 id="nickname-display" class="text-3xl font-bold text-gray-800">未设置昵称</h2>
               <button id="edit-nickname-btn" class="p-1 rounded-full text-gray-300 hover:bg-gray-100 transition-colors">
@@ -201,8 +212,8 @@
           </div>
       </div>
 
-      <div class="flex flex-col items-center space-y-4 mb-8">
-        <div class="flex items-center justify-center">
+      <div class="flex flex-col items-center lg:items-start space-y-4 mb-8">
+        <div class="flex items-center justify-center lg:justify-start w-full">
           <div id="avatar-display-area" class="relative flex items-center space-x-2 w-28">
                 <div class="w-24 h-24 rounded-full border-4 border-white shadow-lg overflow-hidden">
                   <img id="user-avatar" class="w-full h-full object-cover" 
@@ -237,11 +248,13 @@
           </div>
         </div>
       </div>
-
-
-      <h3 class="text-xl font-bold text-gray-700 mb-2">兑换过的商品</h3>
-      <div id="redeemed-items-list" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6"></div>
+        </div>
+        <div class="lg:col-span-3">
+          <h3 class="text-xl font-bold text-gray-700 mb-2">兑换过的商品</h3>
+          <div id="redeemed-items-list" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6"></div>
+        </div>
       
+      </div>
     </div>
 
   </div>
@@ -297,7 +310,7 @@
     </div>
   </div>
 
-  <div id="rules-page" class="page max-w-2xl w-full">
+  <div id="rules-page" class="page w-full max-w-none min-h-screen">
     <div class=" bg-white max-auto rounded-2xl shadow-xl p-6 space-y-8">
 
       <button id="rules-back-btn" class="mb-4 text-gray-600 hover:text-blue-600 transition-colors">← 返回计划页面</button>
@@ -612,7 +625,9 @@
             }
 
             if (response.ok) {
-                initializeApp(data.user_id); 
+                // 兼容 Go/旧接口返回结构
+                const uid = data.user_id || (data.user && data.user.id);
+                initializeApp(uid); 
             }else {
                 loginErrorMessage.textContent = data.error;
                 // showModal('操作失败', data.error);
@@ -651,21 +666,31 @@
     // 每周结算
     async function checkAndPerformSettlement() {
       if (!currentUserId) return;
+
+      // 仅在“周日 20:00 ~ 周一 20:00（上海时区）”结算窗口内自动触发
       const now = new Date();
-      // 只在周日晚上8点或之后进行结算
-      // if (!( (now.getDay() === 0 && now.getHours() >= 20) || (now.getDay() === 1 && now.getHours() <div 20) )) return;
-      // if (!(now.getDay() === 0 || now.getDay() === 1 )) return;
+      const shNow = new Date(now.toLocaleString('en-US', { timeZone: 'Asia/Shanghai' }));
+      const day = shNow.getDay(); // 0=Sun, 1=Mon
+      const hour = shNow.getHours();
+      const inWindow = (day === 0 && hour >= 20) || (day === 1 && hour < 20);
+      if (!inWindow) return;
+
       const response = await fetch(`/api/${currentUserId}/lastSettlementDate`, {
                     method: 'GET',
                     headers: { 'Content-Type': 'application/json' }
                 });
       const data = await response.json();
-      lastSettlementDate = new Date(data.last_settlement_date);
+
+      const lastSettlementDate = data.last_settlement_date ? new Date(data.last_settlement_date) : null;
+      if (!lastSettlementDate || Number.isNaN(lastSettlementDate.getTime())) {
+        // 后端返回空/非法时间则不自动结算，避免刷新时反复结算
+        return;
+      }
       
-      // 计算本周结算窗口的开始时间（即最近的周日晚上8点）
-      const startOfSettlementWindow = new Date(now);
-      startOfSettlementWindow.setDate(now.getDate() - now.getDay()); // 设置为本周日
-      startOfSettlementWindow.setHours(0, 0, 0, 0);
+      // 计算本次结算窗口起点：最近一次“周日 20:00（上海时区）”
+      const startOfSettlementWindow = new Date(shNow);
+      startOfSettlementWindow.setDate(shNow.getDate() - shNow.getDay()); // 本周日
+      startOfSettlementWindow.setHours(20, 0, 0, 0);
 
       // 如果上次结算时间在本次结算窗口开始之后，则说明本周已结算，直接返回
       if (lastSettlementDate.getTime() >= startOfSettlementWindow.getTime()) {
@@ -723,6 +748,12 @@
 
     // ... 在 fetchTasks() 成功获取数据后，需要检查是否有任务正在计时
     function checkRunningTimer(tasks) {
+        // 每次刷新列表先清理旧的 interval，避免重复计时器导致状态错乱
+        if (timerInterval) {
+            clearInterval(timerInterval);
+            timerInterval = null;
+        }
+
         // 确保只有一个任务正在计时
         const runningTask = tasks.find(t => t.timer_start_time !== null);
 
@@ -744,6 +775,10 @@
             }
 
         }, 500); // 注意：我们将间隔改为 500ms，每秒更新两次，让视觉更平滑。
+        }
+        else {
+            activeTimerId = null;
+            activeTimerStartTime = null;
         }
     }
     // 注意：需要在 fetchTasks 成功后调用 checkRunningTimer(tasks)
@@ -904,7 +939,7 @@
         
         document.querySelectorAll('.week-record-btn').forEach(btn=>{
           btn.addEventListener('click', async (e)=>{
-            const weekrecordId = parseInt(e.target.getAttribute('data-record-id'));
+            const weekrecordId = parseInt(e.currentTarget.dataset.recordId);
 
             window.location.href = `/weekrecord?week_record=${weekrecordId}`;
           })
@@ -914,7 +949,7 @@
         document.querySelectorAll('.time-display').forEach(btn=>{
           btn.addEventListener('click', async (e)=>{
             // 新增：计时器切换按钮逻辑
-            const taskId = parseInt(e.target.getAttribute('data-task-id'));
+            const taskId = parseInt(e.currentTarget.dataset.taskId);
 
             if (activeTimerId === taskId) {
                 // 当前任务正在计时，点击是暂停
@@ -963,7 +998,7 @@
             }
             showModal(`删除任务`,'确认删除此任务？',true,async ()=>{
             try{
-              const response = await fetch(`/api/tasks/${taskId}/delete`, {
+              const response = await fetch(`/api/tasks/${taskId}`, {
                     method: 'DELETE',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ user_id: currentUserId })
@@ -1099,7 +1134,7 @@
         document.querySelectorAll('.buy-item-btn').forEach(btn=>{
           btn.addEventListener('click', async (e)=>{
             const itemName = e.currentTarget.dataset.itemName;
-            const itemId = e.currentTarget.dataset.itemId;
+            const itemId = parseInt(e.currentTarget.dataset.itemId);
 
             const response = await fetch(`/api/shop/redeem`, {
                     method: 'POST',
@@ -1124,8 +1159,7 @@
         // 修改
         document.querySelectorAll('.edit-item-btn').forEach(btn=>{
           btn.addEventListener('click', async (e)=>{
-            const itemName = e.currentTarget.dataset.itemName;
-            const itemId = e.currentTarget.dataset.itemId;
+            const itemId = parseInt(e.currentTarget.dataset.itemId);
             const newPoints = prompt("请输入新的商品价格（人民币）:");
             if (!newPoints || isNaN(parseInt(newPoints))) return;
               const response = await fetch(`/api/shop/alter`, {
@@ -1142,7 +1176,7 @@
                       showModal('修改成功', `您已成功修改 ${data.name}！`);
                       fetchShopItems();
                   } else {
-                      showModal('兑换失败', data.error);
+                      showModal('修改失败', data.error);
                   }
           });
         });
@@ -1151,8 +1185,7 @@
         // 删除
         document.querySelectorAll('.delete-item-btn').forEach(btn=>{
           btn.addEventListener('click', async (e)=>{
-            const itemName = e.currentTarget.dataset.itemName;
-            const itemId = e.currentTarget.dataset.itemId;
+            const itemId = parseInt(e.currentTarget.dataset.itemId);
               const response = await fetch(`/api/shop/delete`,{
                   method: 'DELETE',
                   headers: { 'Content-Type': 'application/json' },
@@ -1186,8 +1219,8 @@
         let points = document.getElementById('private-item-points').value;
         points=Math.abs(parseInt(points));
         
-        // let imageUrl = 'https://placehold.co/100x100/FBCFE8/ffffff?text=mate';
-        let imageUrl;
+        // 后端要求 image 必填；未上传时给一个默认图
+        let imageUrl = '/static/a4.png';
 
         if (imageFile) {
             imageUrl = await uploadFile(imageFile);
@@ -1212,7 +1245,8 @@
             const data = await response.json();
             if (response.ok) {
                 createPrivateItemForm.reset();
-                rate.value=data.rate;
+                // 重新拉取用户信息，自动填充当前汇率
+                await fetchUserInfo();
                 fetchShopItems();
             } else {
                 showModal('添加失败', data.error);
@@ -1383,7 +1417,7 @@
             userIdDisplayMy.textContent = currentUserId; // 这里根据需要显示ID或昵称
             currentPointsDisplay.textContent = user.current_points;
             totalPointsDisplay.textContent = user.total_earned_points;
-            userAvatar.src = user.avatar;
+            userAvatar.src = user.avatar || '/static/a2.png';
             rate.value=user.rate;
             
             renderRedeemedItems(user.redeemed_items);

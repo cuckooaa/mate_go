@@ -36,7 +36,7 @@
 </head>
 
 <body class=" flex flex-col items-center  min-h-screen p-4">
-    <div id="leaderboard-container" class="bg-white rounded-2xl shadow-xl p-8 max-w-2xl w-full pb-20 md:pb-8 min-h-screen">
+    <div id="leaderboard-container" class="bg-white rounded-2xl shadow-xl p-8 w-full max-w-none pb-20 md:pb-8 min-h-screen">
 
         <!-- <h2 class="text-2xl font-bold text-gray-800 mb-4 text-center">🏆本周积分榜🏆</h2>
 
@@ -63,7 +63,7 @@
 
                 try {
                     const response = await fetch('/api/leaderboard');
-                    const data = await response.json(); // data 现在是列表 [ {nickname: ..., avatar: ..., total_points: ...}, ... ]
+                    const data = await response.json(); // 期望为数组
 
                     if (!response.ok) {
                         throw new Error(data.error || '无法加载排行榜数据');
@@ -71,14 +71,15 @@
 
                     listElement.innerHTML = ''; // 清除加载信息
                     
-                    if (data.length === 0) {
+                    const rows = Array.isArray(data) ? data : [];
+                    if (rows.length === 0) {
                         listElement.innerHTML = '<p class="text-center text-gray-500">快来获取首枚积分吧！</p>';
                         return;
                     }
 
                     // 渲染列表项
                     // data 已经是按 total_points 降序排列的列表
-                    data.forEach((userEntry, index) => { // userEntry 现在是 {nickname, avatar, total_points}
+                    rows.forEach((userEntry, index) => { // userEntry: {nickname, avatar, total_points}
                         const listItem = document.createElement('li');
                         listItem.className = 'flex items-center p-3 rounded-lg border-b border-gray-100'; // 移除 justify-between，改为更灵活的布局
 
@@ -91,10 +92,11 @@
                             rankClass = 'text-amber-700 font-semibold'; // 第三名
                         }
 
-                        const formattedPoints = userEntry.total_points.toFixed(1);
+                        const rawPoints = typeof userEntry.total_points === 'number' ? userEntry.total_points : 0;
+                        const formattedPoints = rawPoints.toFixed(1);
 
                         // 确定头像 URL，如果为空则使用默认头像
-                        const avatarUrl = userEntry.avatar ? userEntry.avatar : '/static/a2.png'; // <-- 假设你有一个默认头像
+                        const avatarUrl = userEntry.avatar ? userEntry.avatar : '/static/a2.png';
 
                         listItem.innerHTML = `
                             <span class="mr-4 ${rankClass}">
@@ -113,7 +115,8 @@
 
                 } catch (error) {
                     console.error("加载排行榜失败:", error);
-                    listElement.innerHTML = '<p class="text-red-500 text-center">加载失败，请重试。</p>';
+                    // 尽量降级为友好的空态（而不是红字报错挡住用户）
+                    listElement.innerHTML = '<p class="text-center text-gray-500">快来获取首枚积分吧！</p>';
                 }
         }
 

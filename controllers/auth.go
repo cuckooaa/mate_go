@@ -66,6 +66,7 @@ func Register(c *gin.Context) {
 		Email:             input.Email,
 		Password:          string(hash),
 		Nickname:          input.Nickname,
+		Avatar:            "/static/a2.png",
 		CurrentPoints:     0,
 		TotalEarnedPoints: 0,
 		LastSettlementDate: time.Now(),
@@ -87,6 +88,7 @@ func Register(c *gin.Context) {
 
 	c.JSON(http.StatusOK, gin.H{
 		"message": "注册成功",
+		"user_id": user.ID,
 		"user": gin.H{
 			"id":                user.ID,
 			"email":             user.Email,
@@ -130,6 +132,7 @@ func Login(c *gin.Context) {
 
 	c.JSON(http.StatusOK, gin.H{
 		"message": "登录成功",
+		"user_id": user.ID,
 		"user": gin.H{
 			"id":                user.ID,
 			"email":             user.Email,

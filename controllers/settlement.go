@@ -110,13 +110,14 @@ func GetLastSettlementDate(c *gin.Context) {
 		return
 	}
 
+	// 返回 RFC3339 字符串（UTC，带 Z 后缀），前端可直接 new Date(str) 解析
 	var last string
 	if !user.LastSettlementDate.IsZero() {
 		last = user.LastSettlementDate.UTC().Format(time.RFC3339)
 	} else {
 		last = ""
 	}
-	c.JSON(http.StatusOK, gin.H{"last_settlement_date": last + "Z"})
+	c.JSON(http.StatusOK, gin.H{"last_settlement_date": last})
 }
 
 // GetWeekRecordDetails 查询某周的任务详情
