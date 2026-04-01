@@ -94,13 +94,19 @@
             <form id="task-form" class="mb-8">
         <p id="rules-page-btn" class="text-center mb-4 text-sm font-medium text-blue-600">新手指南</p>
         <div class="space-y-4">
-          <h3 class="text-xl font-bold text-gray-700 mb-2">添加任务</h3>
+          <div class="flex items-center justify-between mb-2">
+            <h3 class="text-xl font-bold text-gray-700">添加任务</h3>
+            <button type="button" id="task-toggle-btn" class="lg:hidden inline-flex items-center justify-center w-8 h-8 rounded-full border border-gray-300 text-gray-600 hover:bg-gray-100 transition-colors" aria-label="切换添加任务区域" aria-expanded="true">
+              <span class="text-xl leading-none">−</span>
+            </button>
+          </div>
+          <div id="task-form-body">
           <div>
             <label for="task-description" class="block text-sm font-medium text-gray-700 mb-1">任务描述</label>
             <input type="text" id="task-description" placeholder="例如：完成毕业设计第一章" required
                    class="bg-opacity-50 bg-white w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
           </div>
-          <div class="grid grid-cols-1 gap-4">
+          <div class="grid grid-cols-1 gap-1">
             <div>
               <label class="block text-sm font-medium text-gray-700 mb-1">重要性 (s/ns)</label>
               <select id="task-significance" class="bg-opacity-50 bg-white w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
@@ -123,10 +129,11 @@
               </select>
             </div>
           </div>
-          <button type="submit" class="w-full bg-blue-500 text-white font-bold py-2 px-4 rounded-lg hover:bg-blue-700 transition-colors">
+          <button type="submit" class="mt-4 w-full bg-blue-500 text-white font-bold py-2 px-4 rounded-lg hover:bg-blue-700 transition-colors">
             添加任务
           </button>
         </div>
+          </div>
             </form>
           </div>
 
@@ -159,12 +166,16 @@
           <div id="shop-left-header-slot" class="hidden lg:block"></div>
 
           <div class="mb-8">
-            <h3 class="text-xl font-bold text-gray-700 mb-2">添加商品</h3>
+            <div class="flex items-center justify-between mb-2">
+              <h3 class="text-xl font-bold text-gray-700">添加商品</h3>
+              <button type="button" id="shop-toggle-btn" class="lg:hidden inline-flex items-center justify-center w-8 h-8 rounded-full border border-gray-300 text-gray-600 hover:bg-gray-100 transition-colors" aria-label="切换添加商品区域" aria-expanded="true">
+                <span class="text-xl leading-none">−</span>
+              </button>
+            </div>
             <form id="create-private-shop-item-form" class="space-y-2 rounded-lg ">
-          <div>
+          <div id="shop-form-body">
             <label for="private-item-name" class="block text-sm font-medium text-gray-700 mb-1">商品名</label>
             <input type="text" id="private-item-name" required class="bg-opacity-50 bg-white w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
-          </div>
           <div class="flex w-full space-x-2"> 
             <div class="w-1/2">
               <label for="private-item-points" class="block text-sm font-medium text-gray-700 mb-1">商品价格(人民币)</label>
@@ -189,16 +200,17 @@
           <button type="submit" class="w-full bg-blue-500 text-white font-bold py-2 px-4 rounded-lg hover:bg-blue-700 transition-colors">
             添加商品
           </button>
+          </div>
             </form>
           </div>
         </div>
 
         <div class="lg:flex-1 lg:min-h-[calc(100vh-2rem)] layout-right-panel">
-          <h2 class="text-2xl font-bold text-gray-800 mb-2">公共商品</h2>
-          <div id="public-shop-items" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6 mb-8"></div>
-
           <h2 class="text-2xl font-bold text-gray-800 mb-2">我的商品</h2>
-          <div id="private-shop-items" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6"></div>
+          <div id="private-shop-items" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6 mb-8"></div>
+
+          <h2 class="text-2xl font-bold text-gray-800 mb-2">公共商品</h2>
+          <div id="public-shop-items" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6"></div>
         </div>
       </div>
     </div>
@@ -677,6 +689,41 @@
         }
     });
 
+    function setupFormToggle(buttonId, sectionId) {
+      const button = document.getElementById(buttonId);
+      const section = document.getElementById(sectionId);
+      if (!button || !section) return;
+      button.addEventListener('click', () => {
+        const isHidden = section.classList.toggle('hidden');
+        const icon = button.querySelector('span');
+        if (icon) icon.textContent = isHidden ? '+' : '−';
+        button.setAttribute('aria-expanded', String(!isHidden));
+      });
+    }
+
+    function updateResponsiveFormToggles() {
+      const isLarge = window.matchMedia('(min-width: 1024px)').matches;
+      [['task-toggle-btn', 'task-form-body'], ['shop-toggle-btn', 'shop-form-body']].forEach(([buttonId, sectionId]) => {
+        const button = document.getElementById(buttonId);
+        const section = document.getElementById(sectionId);
+        if (!button || !section) return;
+        const icon = button.querySelector('span');
+        if (isLarge) {
+          section.classList.remove('hidden');
+          if (icon) icon.textContent = '−';
+          button.setAttribute('aria-expanded', 'true');
+        } else {
+          section.classList.add('hidden');
+          if (icon) icon.textContent = '+';
+          button.setAttribute('aria-expanded', 'false');
+        }
+      });
+    }
+
+    setupFormToggle('task-toggle-btn', 'task-form-body');
+    setupFormToggle('shop-toggle-btn', 'shop-form-body');
+    updateResponsiveFormToggles();
+    window.addEventListener('resize', updateResponsiveFormToggles);
 
     // 赛季/周数
     const seasonEpoch = new Date('2025-10-26T00:00:00+08:00');
