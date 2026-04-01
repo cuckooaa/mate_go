@@ -725,7 +725,7 @@
       const lastSundayMidnight = new Date(shNow);
       lastSundayMidnight.setDate(shNow.getDate() - shNow.getDay()); // 本周日
       lastSundayMidnight.setHours(0, 0, 0, 0);
-      lastSundayMidnight.setDate(lastSundayMidnight.getDate() - 7); // 上周日 00:00
+      //lastSundayMidnight.setDate(lastSundayMidnight.getDate() - 7);
 
       if (lastSettlementDate.getTime() < lastSundayMidnight.getTime()) {
         await performWeeklySettlement();
