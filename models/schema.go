@@ -32,9 +32,10 @@ type ShopItem struct {
 	Name      string    `json:"name" gorm:"type:varchar(100);not null"`
 	Points    float64   `json:"points" gorm:"not null"`
 	Image     string    `json:"image" gorm:"type:varchar(255)"`
-	Type      string    `json:"type" gorm:"type:varchar(20);not null"`
-	UserID    *string   `json:"user_id,omitempty" gorm:"type:varchar(255);index"`
-	CreatedAt time.Time `json:"created_at" gorm:"autoCreateTime"`
+	// 给这两个字段起相同的索引名 idx_user_type_created，GORM 会自动创建联合索引
+	UserID *string 		`json:"user_id,omitempty" gorm:"type:varchar(255);index:idx_user_type_created"`
+    Type   string  		`json:"type" gorm:"type:varchar(20);index:idx_user_type_created"` 
+	CreatedAt time.Time `json:"created_at" gorm:"autoCreateTime;index:idx_user_type_created"`
 }
 
 type RedeemedItem struct {

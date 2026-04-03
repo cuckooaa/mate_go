@@ -1,10 +1,19 @@
 package controllers
 
 import (
+	"context"
 	"net/http"
 	"strings"
+	"time"
+
 	"github.com/gin-gonic/gin"
+	"github.com/redis/go-redis/v9"
 	"mate/models"
+)
+
+const (
+	leaderboardCacheKey    = "leaderboard:weekly"
+	leaderboardEmptyMember = "__leaderboard_empty__"
 )
 
 // GetUserInfo 获取用户信息和兑换记录
@@ -23,20 +32,20 @@ func GetUserInfo(c *gin.Context) {
 	redeemedList := make([]gin.H, 0, len(redeemedItems))
 	for _, item := range redeemedItems {
 		redeemedList = append(redeemedList, gin.H{
-			"name":       item.ItemName,
-			"points":     item.ItemPoints,
-			"image":      item.ItemImage,
+			"name":        item.ItemName,
+			"points":      item.ItemPoints,
+			"image":       item.ItemImage,
 			"redeemed_at": item.RedeemedAt.Format("2006-01-02"),
 		})
 	}
 
 	c.JSON(http.StatusOK, gin.H{
-		"nickname":           user.Nickname,
-		"avatar":             user.Avatar,
-		"current_points":     user.CurrentPoints,
+		"nickname":            user.Nickname,
+		"avatar":              user.Avatar,
+		"current_points":      user.CurrentPoints,
 		"total_earned_points": user.TotalEarnedPoints,
-		"redeemed_items":     redeemedList,
-		"rate":               user.ExchangeRate,
+		"redeemed_items":      redeemedList,
+		"rate":                user.ExchangeRate,
 	})
 }
 
@@ -99,25 +108,108 @@ func UpdateAvatar(c *gin.Context) {
 
 // GetLeaderboard 获取排行榜（按积分总和排序，含头像和昵称）
 func GetLeaderboard(c *gin.Context) {
-	// 集成原生 SQL 或 GORM API
+	ctx := context.Background()
 	type leaderboardRow struct {
-		Nickname    string   `json:"nickname"`
-		Avatar      string   `json:"avatar"`
-		TotalPoints float64  `json:"total_points"`
+		Nickname    string  `json:"nickname"`
+		Avatar      string  `json:"avatar"`
+		TotalPoints float64 `json:"total_points"`
 	}
-	var results []leaderboardRow
 
-	// 用 GORM 的 Raw SQL
+	if exists, err := models.RDB.Exists(ctx, leaderboardCacheKey).Result(); err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Redis 查询异常"})
+		return
+	} else if exists > 0 {
+		members, err := models.RDB.ZRevRangeWithScores(ctx, leaderboardCacheKey, 0, -1).Result()
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "Redis 查询异常"})
+			return
+		}
+		if len(members) == 0 {
+			c.JSON(http.StatusOK, []leaderboardRow{})
+			return
+		}
+
+		userIDs := make([]string, 0, len(members))
+		for _, member := range members {
+			if member.Member == leaderboardEmptyMember {
+				continue
+			}
+			idStr, ok := member.Member.(string)
+			if !ok {
+				continue
+			}
+			userIDs = append(userIDs, idStr)
+		}
+		if len(userIDs) == 0 {
+			c.JSON(http.StatusOK, []leaderboardRow{})
+			return
+		}
+
+		var users []models.User
+		if err := models.DB.Where("id IN ?", userIDs).Find(&users).Error; err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "数据库查询失败"})
+			return
+		}
+		userMap := make(map[string]models.User, len(users))
+		for _, u := range users {
+			userMap[u.ID] = u
+		}
+
+		results := make([]leaderboardRow, 0, len(members))
+		for _, member := range members {
+			idStr, ok := member.Member.(string)
+			if !ok || idStr == leaderboardEmptyMember {
+				continue
+			}
+			user, ok := userMap[idStr]
+			if !ok {
+				continue
+			}
+			results = append(results, leaderboardRow{
+				Nickname:    user.Nickname,
+				Avatar:      user.Avatar,
+				TotalPoints: member.Score,
+			})
+		}
+		c.JSON(http.StatusOK, results)
+		return
+	}
+
+	type rawLeaderboardRow struct {
+		UserID      string  `json:"user_id"`
+		Nickname    string  `json:"nickname"`
+		Avatar      string  `json:"avatar"`
+		TotalPoints float64 `json:"total_points"`
+	}
+	var rawRows []rawLeaderboardRow
+
 	models.DB.Raw(`
-		SELECT users.nickname, users.avatar, SUM(tasks.points) as total_points
+		SELECT users.id as user_id, users.nickname, users.avatar, SUM(tasks.points) as total_points
 		FROM users
 		JOIN tasks ON users.id = tasks.user_id
 		WHERE tasks.status = ?
-		GROUP BY users.nickname, users.avatar
+		GROUP BY users.id, users.nickname, users.avatar
 		ORDER BY total_points DESC
-	`, "completed").Scan(&results)
+	`, "completed").Scan(&rawRows)
 
+	if len(rawRows) == 0 {
+		models.RDB.ZAdd(ctx, leaderboardCacheKey, redis.Z{Score: 0, Member: leaderboardEmptyMember})
+		models.RDB.Expire(ctx, leaderboardCacheKey, 24*time.Hour)
+		c.JSON(http.StatusOK, []leaderboardRow{})
+		return
+	}
+
+	zMembers := make([]redis.Z, 0, len(rawRows))
+	results := make([]leaderboardRow, 0, len(rawRows))
+	for _, row := range rawRows {
+		zMembers = append(zMembers, redis.Z{Score: row.TotalPoints, Member: row.UserID})
+		results = append(results, leaderboardRow{
+			Nickname:    row.Nickname,
+			Avatar:      row.Avatar,
+			TotalPoints: row.TotalPoints,
+		})
+	}
+	models.RDB.ZAdd(ctx, leaderboardCacheKey, zMembers...)
+	models.RDB.Expire(ctx, leaderboardCacheKey, 24*time.Hour)
 	c.JSON(http.StatusOK, results)
 }
-
-

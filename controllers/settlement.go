@@ -1,6 +1,7 @@
 package controllers
 
 import (
+	"context"
 	"encoding/json"
 	"math"
 	"net/http"
@@ -43,8 +44,10 @@ func SettleTasks(c *gin.Context) {
 
 	if len(tasks) == 0 {
 		// 没有需要结算的任务时，也要更新时间
+		ctx := context.Background()
 		user.LastSettlementDate = time.Now().UTC()
 		models.DB.Save(&user)
+		_ = models.RDB.Del(ctx, leaderboardCacheKey).Err()
 		c.JSON(http.StatusOK, gin.H{"message": "没有已完成的任务需要结算"})
 		return
 	}
@@ -67,12 +70,12 @@ func SettleTasks(c *gin.Context) {
 	taskListBytes, _ := json.Marshal(taskIDs)
 
 	newRecord := models.WeekRecord{
-		UserID:     userID,
-		Name:       req.SeasonWeek,
+		UserID:      userID,
+		Name:        req.SeasonWeek,
 		TotalPoints: totalPoints,
-		TotalNum:   taskCount,
-		TaskLists:  string(taskListBytes),
-		TotalTime:  totalTime,
+		TotalNum:    taskCount,
+		TaskLists:   string(taskListBytes),
+		TotalTime:   totalTime,
 	}
 	if err := models.DB.Create(&newRecord).Error; err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "结算记录创建失败"})
@@ -81,6 +84,7 @@ func SettleTasks(c *gin.Context) {
 
 	user.LastSettlementDate = time.Now().UTC()
 	models.DB.Save(&user)
+	_ = models.RDB.Del(context.Background(), leaderboardCacheKey).Err()
 
 	aveDayTime := int(math.Floor(float64(totalTime) / 7))
 	totalHours := totalTime / 3600
@@ -149,13 +153,13 @@ func GetWeekRecordDetails(c *gin.Context) {
 	const shanghaiZone = "Asia/Shanghai"
 	loc, _ := time.LoadLocation(shanghaiZone)
 	type TaskResp struct {
-		ID               uint    `json:"id"`
-		Description      string  `json:"description"`
-		Type             string  `json:"type"`
-		Points           float64 `json:"points"`
-		Status           string  `json:"status"`
-		CreatedAt        string  `json:"created_at"`
-		TimeSpentSeconds int     `json:"time_spent_seconds"`
+		ID               uint     `json:"id"`
+		Description      string   `json:"description"`
+		Type             string   `json:"type"`
+		Points           float64  `json:"points"`
+		Status           string   `json:"status"`
+		CreatedAt        string   `json:"created_at"`
+		TimeSpentSeconds int      `json:"time_spent_seconds"`
 		TimerStartTime   *float64 `json:"timer_start_time,omitempty"`
 	}
 	taskList := make([]TaskResp, 0, len(tasks))

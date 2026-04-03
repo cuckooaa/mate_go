@@ -7,7 +7,33 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
+	"mate/models"
 )
+
+// 1. 定义一个全局带缓冲的 Channel，作为“垃圾桶”
+// 容量设为 100 即可，防止突发删除堆积
+var ImageCleanupChan = make(chan string, 100)
+
+// 2. 初始化消费者后台工人 (Worker)
+func StartImageCleanupWorker() {
+	go func() {
+		// 死循环监听 Channel，只要里面有图片 URL，就拿出来处理
+		for imageURL := range ImageCleanupChan {
+			if strings.TrimSpace(imageURL) == "" {
+				continue
+			}
+			
+			var count int64
+			// 查询是否还有其他兑换记录在使用这张图
+			models.DB.Model(&models.RedeemedItem{}).Where("item_image = ?", imageURL).Count(&count)
+			
+			// 如果没有人在用了，物理删除本地文件
+			if count == 0 {
+				_ = DeleteLocalFile(imageURL) 
+			}
+		}
+	}()
+}
 
 // 允许上传的图片扩展名
 var allowedExtensions = map[string]struct{}{

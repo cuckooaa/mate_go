@@ -254,12 +254,17 @@ func DeleteItem(c *gin.Context) {
 		c.JSON(http.StatusNotFound, gin.H{"error": "用户不存在"})
 		return
 	}
-	// 查询 RedeemedItem 中是否还有其它使用该 image
-	var count int64
-	models.DB.Model(&models.RedeemedItem{}).Where("item_image = ?", item.Image).Count(&count)
-	if count == 0 && strings.TrimSpace(item.Image) != "" {
-		DeleteLocalFile(item.Image)
+	// 将阻塞的 DB.Count 和 DeleteLocalFile 替换为异步投递
+	if strings.TrimSpace(item.Image) != "" {
+		select {
+		case ImageCleanupChan <- item.Image:
+			// 成功将图片 URL 扔进后台清理队列，主线程继续往下走，丝滑无比
+		default:
+			// 极端情况：队列满了（100个名额满了），为了不阻塞主线程，这里可以选择记录日志或者直接忽略
+			// 即使没删掉，也只是一张废图，不影响核心业务逻辑
+		}
 	}
+
 	models.DB.Delete(&item)
 
 	// 新增：如果是 public 商品，清除缓存

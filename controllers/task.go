@@ -1,6 +1,7 @@
 package controllers
 
 import (
+	"context"
 	"math"
 	"net/http"
 	"strconv"
@@ -59,7 +60,7 @@ func CreateTask(c *gin.Context) {
 	c.JSON(http.StatusCreated, gin.H{
 		"message": "任务创建成功",
 		"task": gin.H{
-			"id":         task.ID,
+			"id":          task.ID,
 			"description": task.Description,
 			"type":        task.Type,
 			"points":      task.Points,
@@ -90,12 +91,12 @@ func GetTasks(c *gin.Context) {
 	for _, record := range weekRecords {
 		createdAt := record.CreatedAt.In(loc).Format("2006-01-02")
 		weekRecordList = append(weekRecordList, gin.H{
-			"id":         record.ID,
-			"name":       record.Name,
+			"id":           record.ID,
+			"name":         record.Name,
 			"total_points": record.TotalPoints,
 			"total_num":    record.TotalNum,
-			"created_at": createdAt,
-			"total_time": record.TotalTime,
+			"created_at":   createdAt,
+			"total_time":   record.TotalTime,
 		})
 	}
 
@@ -161,9 +162,15 @@ func CompleteTask(c *gin.Context) {
 		return
 	}
 
+	ctx := context.Background()
+	_ = models.RDB.ZRem(ctx, leaderboardCacheKey, leaderboardEmptyMember).Err()
+	if _, err := models.RDB.ZIncrBy(ctx, leaderboardCacheKey, points, userID).Result(); err == nil {
+		models.RDB.Expire(ctx, leaderboardCacheKey, 24*time.Hour)
+	}
+
 	c.JSON(http.StatusOK, gin.H{
-		"message": "任务已完成",
-		"points":  points,
+		"message":            "任务已完成",
+		"points":             points,
 		"time_spent_seconds": task.TimeSpentSeconds,
 	})
 }
@@ -199,7 +206,7 @@ func TrackTaskTime(c *gin.Context) {
 		return
 	}
 	var req struct {
-		TimeSpent      *int    `json:"time_spent"`       // 新增的计时秒数
+		TimeSpent      *int     `json:"time_spent"`       // 新增的计时秒数
 		TimerStartTime *float64 `json:"timer_start_time"` // 计时器开始时间，秒时间戳或nil
 	}
 	if err := c.ShouldBindJSON(&req); err != nil {
@@ -227,7 +234,7 @@ func TrackTaskTime(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, gin.H{
-		"message":           "计时数据已同步",
+		"message":            "计时数据已同步",
 		"time_spent_seconds": task.TimeSpentSeconds,
 		"timer_start_time":   task.TimerStartTime,
 	})

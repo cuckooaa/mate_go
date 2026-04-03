@@ -23,6 +23,9 @@ func main() {
 		&models.RedeemedItem{},
 	)
 
+	// 启动后台文件异步清理服务
+	controllers.StartImageCleanupWorker()
+
 	// 初始化 Gin 默认引擎
 	r := gin.Default()
 
