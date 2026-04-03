@@ -33,8 +33,6 @@ func main() {
 	r.LoadHTMLGlob("templates/*")
 
 	// 配置 Redis Session
-	// securecookie uses hashKey/blockKey to sign (and optionally encrypt) the session cookie.
-	// If not provided, session.Save() will fail with: "securecookie: no codecs provided".
 	hashKey := os.Getenv("MATE_SESSION_HASH_KEY")
 	blockKey := os.Getenv("MATE_SESSION_BLOCK_KEY")
 	if hashKey == "" {
@@ -58,6 +56,13 @@ func main() {
 	if err != nil {
 		panic(err)
 	}
+
+	store.Options(sessions.Options{
+		MaxAge:   60 * 60 * 24 * 7, // 7 天（单位：秒）
+		HttpOnly: true,            
+		Path:     "/",           
+	})
+
 	r.Use(sessions.Sessions("mate_session", store))
 
 	// 公开 API 路由 (不需要登录)
@@ -68,30 +73,12 @@ func main() {
 		publicAPI.GET("/check_login_status", controllers.CheckLoginStatus) // 供前端检查状态
 		publicAPI.POST("/logout", controllers.Logout)
 		publicAPI.GET("/leaderboard", controllers.GetLeaderboard)
-		// Debug: 帮助定位 cookie / session 是否正常
-		// publicAPI.GET("/debug_session", func(c *gin.Context) {
-		// 	sess := sessions.Default(c)
-		// 	mateSession, _ := c.Cookie("mate_session")
-		// 	c.JSON(200, gin.H{
-		// 		"cookie_header":  c.GetHeader("Cookie"),
-		// 		"mate_session":   mateSession,
-		// 		"session_id":     sess.ID(),
-		// 		"user_id":        sess.Get("user_id"),
-		// 	})
-		// })
 	}
 
 	// 保护 API 路由 (需要登录鉴权)
 	protectedAPI := r.Group("/api")
-	protectedAPI.Use(middlewares.AuthMiddleware()) // 核心：使用你刚写的保安中间件
+	protectedAPI.Use(middlewares.AuthMiddleware()) // 核心：使用保安中间件
 	{
-		// 测试一下保护路由
-		protectedAPI.GET("/me", func(c *gin.Context) {
-			userID := c.MustGet("user_id").(string)
-			c.JSON(200, gin.H{"message": "成功访问受保护的数据", "your_user_id": userID})
-		})
-		// 之后的所有任务、商城 API 都会写在这里！
-
 		// --- 计划页面 API (日常任务) ---
 		protectedAPI.POST("/tasks", controllers.CreateTask)                // 创建任务
 		protectedAPI.GET("/tasks", controllers.GetTasks)                   // 获取任务列表 (注意: 移除了 URL 里的 /:user_id)
