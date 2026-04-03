@@ -701,8 +701,20 @@
       });
     }
 
-    function updateResponsiveFormToggles() {
+    // 新增：记录上一次的屏幕状态（是否为大屏）
+    let lastIsLarge = window.matchMedia('(min-width: 1024px)').matches;
+
+    function updateResponsiveFormToggles(isInit = false) {
       const isLarge = window.matchMedia('(min-width: 1024px)').matches;
+
+      // 核心修复逻辑：
+      // 如果不是首次初始化，且屏幕宽度没有跨越 1024px 的断点，直接 return。
+      // 这样就完美过滤掉了安卓键盘弹出带来的高度改变（resize）干扰。
+      if (!isInit && isLarge === lastIsLarge) {
+        return;
+      }
+      lastIsLarge = isLarge; // 更新状态
+
       [['task-toggle-btn', 'task-form-body'], ['shop-toggle-btn', 'shop-form-body']].forEach(([buttonId, sectionId]) => {
         const button = document.getElementById(buttonId);
         const section = document.getElementById(sectionId);
@@ -722,8 +734,12 @@
 
     setupFormToggle('task-toggle-btn', 'task-form-body');
     setupFormToggle('shop-toggle-btn', 'shop-form-body');
-    updateResponsiveFormToggles();
-    window.addEventListener('resize', updateResponsiveFormToggles);
+    
+    // 首次加载时传入 true，强制执行一次初始化
+    updateResponsiveFormToggles(true); 
+    
+    // 监听 resize 时，传入 false，只有跨越断点时才会重置表单
+    window.addEventListener('resize', () => updateResponsiveFormToggles(false));
 
     // 赛季/周数
     const seasonEpoch = new Date('2025-10-26T00:00:00+08:00');
