@@ -47,7 +47,7 @@ func main() {
 	store, err := redis.NewStore(
 		10,
 		"tcp",
-		"127.0.0.1:6379",
+		"mate_redis:6379",
 		"",
 		"",
 		[]byte(hashKey),
@@ -142,6 +142,6 @@ func main() {
 		c.JSON(200, gin.H{"message": "pong"})
 	})
 
-	// 启动服务，监听 8080 端口
+	// 启动服务，监听 5000 端口
 	r.Run(":5000")
 }

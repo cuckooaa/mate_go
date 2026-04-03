@@ -21,7 +21,7 @@ func InitDB() {
 
 	// 构建 MySQL 连接字符串
 	// DSN 格式: 用户名:密码@tcp(主机:端口)/数据库?参数
-	dsn := "root:rootpassword@tcp(127.0.0.1:3406)/mate_db?charset=utf8mb4&parseTime=True&loc=Asia%2FShanghai"
+	dsn := "root:rootpassword@tcp(mate_mysql:3306)/mate_db?charset=utf8mb4&parseTime=True&loc=Asia%2FShanghai"
 
 	// 连接 MySQL，使用 GORM
 	var err error
@@ -42,7 +42,7 @@ func InitDB() {
 
 	// 初始化 Redis 客户端
 	RDB = redis.NewClient(&redis.Options{
-		Addr:     "localhost:6379", // 本地 Redis
+		Addr:     "mate_redis:6379", // 本地 Redis
 		Password: "",               // 无密码
 		DB:       0,                // 默认数据库
 	})

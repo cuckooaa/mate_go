@@ -1,24 +1,37 @@
 version: '3.8'
 
 services:
+  mate-backend:
+    build: .                 # 让 Docker 自动寻找当前目录的 Dockerfile 进行构建
+    container_name: mate_app
+    restart: always
+    ports:
+      - "80:5000"            # 将服务器的 80 端口（默认 HTTP 端口）映射到容器的 5000 端口
+    depends_on:
+      - mysql
+      - redis
+    volumes:
+      - mate_uploads:/app/uploads # 持久化用户上传的图片
+
   mysql:
-    image: mysql:8.0  # 使用官方的 MySQL 8.0 镜像
-    container_name: mate_mysql  # 给容器起个名字
+    image: mysql:8.0
+    container_name: mate_mysql
     restart: always
     environment:
-      MYSQL_ROOT_PASSWORD: rootpassword  # 设置 root 密码，本地开发可以简单点
-      MYSQL_DATABASE: mate_db          # 启动时自动为你创建一个名为 mate_db 的数据库
-    ports:
-      - "3406:3306"  # 将电脑的 3306 端口映射到容器的 3306 端口
+      MYSQL_ROOT_PASSWORD: rootpassword
+      MYSQL_DATABASE: mate_db
+    command: --default-authentication-plugin=mysql_native_password --max_connections=200
     volumes:
-      - mysql_data:/var/lib/mysql  # 数据持久化，防止容器重启后数据丢失
+      - mysql_data:/var/lib/mysql
 
   redis:
-    image: redis:7.0  # 使用官方的 Redis 7.0 镜像
+    image: redis:7.0
     container_name: mate_redis
     restart: always
-    ports:
-      - "6379:6379"  # 将电脑的 6379 端口映射到容器的 6379 端口
+    volumes:
+      - redis_data:/data
 
 volumes:
-  mysql_data:  # 声明上面用到的大容量存储卷
+  mysql_data:
+  redis_data:
+  mate_uploads:
